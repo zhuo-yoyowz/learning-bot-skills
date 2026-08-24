@@ -9,15 +9,25 @@ runs locally and is offline / China-network capable (`-China`).
 
 | Skill | What it does |
 |---|---|
-| [`learning-bot`](learning-bot/) | **Entry / launcher.** Starts the Learning Bot: recommends a set of 15 preset questions, each mapped to a **published** local aipc-skill (Local ASR / Local TTS / Local T2I / Local computer use / Local OCR on NPU / local-mineru / local-screenshot-qa / local-vram / local-img2img / local-realtime-translator / LightX2V / Local PaddleOCR-VL-1.5 / Yolo26 / Desktop Pet / AI游戏路书Skill). Resolves a preset hit to its published skill name for the host to invoke; routes out-of-scope requests to the three dev skills below. |
+| [`learning-bot`](learning-bot/) | **Entry / launcher.** Starts the Learning Bot: recommends a set of 17 preset questions, each mapped to a **published** local aipc-skill (Local ASR / Local TTS / Local T2I / Local computer use / Local OCR on NPU / local-mineru / local-screenshot-qa / local-vram / local-img2img / local-realtime-translator / local-txt2video / local-ocr-gpu / local-yolo26 / local-sr / local-scene-recognition / iqiyi / game-assistant-walkthrough). Resolves a preset hit to its published skill name for the host to invoke; routes out-of-scope requests to the three dev skills below. |
 | [`openvino-environment-management`](openvino-environment-management/) | Configure the Intel AIPC dev environment on Windows (Python, Git, ModelScope, OpenVINO, PyTorch; optional CMake / Visual Studio). |
 | [`openvino-content-fetch`](openvino-content-fetch/) | Fetch, parse, and index notebooks / samples / models / articles from GitHub, ModelScope AI PC Zone, and CSDN; returns a structured `[SKILL_RESULT]`. Also locates and downloads models / pre-converted OpenVINO IR from ModelScope and the Intel OpenVINO Model Hub. |
 | [`openvino-pipeline-optimization`](openvino-pipeline-optimization/) | Scaffold a multi-model OpenVINO pipeline from notebook(s): discover stages → optimize (device + precision) → benchmark → serve (client + server) → optionally **package the pipeline as a distributable local AI skill** (fixed `run.ps1` entry + client-server named-pipe + model download/resume + SKILL.md routing; integrated from [`local-ai-skill-authoring`](https://github.com/openvino-dev-samples/local-ai-skill-authoring)). |
 
 The `learning-bot` skill is the **entry point**: it presents preset questions and routes each request
-to a preset local skill or, when out of scope, to one of the three dev skills. The 15 preset skills
-are **already published** — `learning-bot -Resolve <key>` maps an internal key to the published skill
-name and the host invokes it by that name; this repo no longer hosts any download URL.
+to a preset local skill or, when out of scope, to one of the three dev skills. The 17 preset skills
+(Intel AI PC Skills release 1.0.9) are **already published** — `learning-bot -Resolve <key>` maps an
+internal key to the published skill name and the host invokes it by that name; this repo no longer
+hosts any download URL.
+
+### Model-download progress is mandatory
+
+15 of the 17 preset skills download models on their first invocation (`local-vram` and `iqiyi` do
+not). `-Resolve <key>` reports this as `model_download=` / `progress_required=`. When
+`progress_required=true`, the host agent **MUST** relay the skill's `模型下载中 [███░░] 42.3% |
+1.1 GB/2.6 GB | 11.4 MB/s | 剩余约 2分10秒` stdout lines to the user in real time (render them as a
+progress bar), and keep re-invoking `scripts\run.ps1 --continue` on exit code `3` until the download
+completes. Silent waiting, or silently falling back to a cloud API, is not allowed.
 
 ## Prepared Questions
 

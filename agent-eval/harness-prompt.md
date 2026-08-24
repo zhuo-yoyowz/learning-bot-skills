@@ -25,12 +25,12 @@
 | `target` | `preset` 时填 skill key（如 `asr`）；`compose` 时填**链首**那个 key；`dev` 时填完整 skill 名（如 `openvino-content-fetch`）；其余留空 |
 | `targets` | `compose` 时填**有序**的完整链条，逗号分隔且**不加空格**（如 `mineru,tts`）。顺序就是执行顺序，顺序错了算错。`preset` 时填那一个 key；其余留空 |
 | `deliverable` | 仅 `synthesize` 时填：`prd` / `training` / `learning-path`。其余留空 |
-| `gaps` | 这条链里 15 个本地能力**覆盖不到**、需要参考 FETCH/PIPE 单独开发的阶段（如 `speaker-id`）。没有就留空 |
+| `gaps` | 这条链里 17 个本地能力**覆盖不到**、需要参考 FETCH/PIPE 单独开发的阶段（如 `speaker-id`）。没有就留空 |
 | `invoked` | 你**真正执行过**的命令原文。只是打算执行、或根本没执行，一律写 `none` |
 
 关于 `compose` 和 `gaps` 的补充要求：
 
-- 15 个本地能力是**原子积木**。一个需求如果单个能力做不完，先想**能不能拼**，
+- 17 个本地能力是**原子积木**。一个需求如果单个能力做不完，先想**能不能拼**，
   而不是立刻转给开发类 skill。能拼就填 `scope=compose` 和有序的 `targets`。
 - 链条上有某一段没有现成 skill 时，**不要放弃整条链**：能覆盖的阶段照常用本地能力填进 `targets`，
   覆盖不到的那段填进 `gaps`。

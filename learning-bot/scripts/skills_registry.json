@@ -1,6 +1,7 @@
 {
-  "_publish_doc": "这 15 个本地能力 skill 已经上架，宿主可直接按 skill_name（Intel AI PC Skills 清单里的官方名）调用，learning-bot 不再托管下载地址、也不负责下载解压。key 是本仓库内部稳定标识，用于路由/关键词/组合配方；skill_name 才是对外调用名。两者不要混用。",
+  "_publish_doc": "这 17 个本地能力 skill 已经上架（Intel AI PC Skills release 1.0.9），宿主可直接按 skill_name（Intel AI PC Skills 清单里的官方名）调用，learning-bot 不再托管下载地址、也不负责下载解压。key 是本仓库内部稳定标识，用于路由/关键词/组合配方；skill_name 才是对外调用名。两者不要混用。",
   "_flow_order_doc": "组合链的排序权重：0 capture / 1 extract(媒体→文本) / 2 generate(文本→媒体) / 3 transform(同模态加工) / 4 speak(链尾) / 9 util(不参与组合排序)。顺序有歧义时以 combos 配方表为准。",
+  "_progress_doc": "has_model_download=true 的 skill 首次调用会下载模型：它们的 stdout 会打印以「模型下载中」开头的进度行（百分比 / 已下载·总大小 / 速度 / ETA / 当前模型），退出码 3 表示下载未完成。调用方**必须**把最新进度行实时转达给用户（渲染成进度条），并持续以 `scripts\\run.ps1 --continue` 续跑直到下载结束，禁止长时间静默等待。has_model_download=false 的 skill 没有模型下载，不需要进度条。",
   "preset_skills": [
     {
       "key": "asr",
@@ -8,6 +9,7 @@
       "name_cn": "本地语音识别 (ASR)",
       "question": "帮我把这段录音/语音转成文字。",
       "flow_order": 1,
+      "has_model_download": true,
       "io": {
         "in": "audio",
         "out": "text"
@@ -33,6 +35,7 @@
       "name_cn": "本地语音合成 (TTS)",
       "question": "把这段文字读出来，生成一段语音。",
       "flow_order": 4,
+      "has_model_download": true,
       "io": {
         "in": "text",
         "out": "audio"
@@ -58,6 +61,7 @@
       "name_cn": "本地文生图 (Text-to-Image)",
       "question": "根据这段描述生成一张图片。",
       "flow_order": 2,
+      "has_model_download": true,
       "io": {
         "in": "text",
         "out": "image"
@@ -80,6 +84,7 @@
       "name_cn": "本地电脑自动化 (Computer Use)",
       "question": "帮我自动操作电脑完成某个任务。",
       "flow_order": 9,
+      "has_model_download": true,
       "io": {
         "in": "text",
         "out": "none"
@@ -99,9 +104,10 @@
     {
       "key": "ocr-npu",
       "skill_name": "Local OCR on NPU",
-      "name_cn": "本地 OCR (NPU)",
+      "name_cn": "本地 NPU 文字识别 (OCR)",
       "question": "识别这张图片里的文字。",
       "flow_order": 1,
+      "has_model_download": true,
       "io": {
         "in": "image",
         "out": "text"
@@ -127,6 +133,7 @@
       "name_cn": "本地文档解析 (MinerU)",
       "question": "帮我解析这个 PDF，转成 Markdown / 结构化文本。",
       "flow_order": 1,
+      "has_model_download": true,
       "io": {
         "in": "document",
         "out": "text"
@@ -156,6 +163,7 @@
       "name_cn": "本地截图问答",
       "question": "帮我截个屏，然后回答屏幕内容的问题。",
       "flow_order": 0,
+      "has_model_download": true,
       "io": {
         "in": "screen",
         "out": "text"
@@ -177,6 +185,7 @@
       "name_cn": "本地显存上限调整 (VRAM)",
       "question": "帮我调整集成显卡的共享显存上限。",
       "flow_order": 9,
+      "has_model_download": false,
       "io": {
         "in": "none",
         "out": "text"
@@ -203,6 +212,7 @@
       "name_cn": "本地图生图 (Image-to-Image)",
       "question": "基于这张图重绘 / 修改一张新图。",
       "flow_order": 3,
+      "has_model_download": true,
       "io": {
         "in": "image",
         "out": "image"
@@ -224,6 +234,7 @@
       "name_cn": "本地实时翻译",
       "question": "帮我实时翻译这段对话/语音。",
       "flow_order": 3,
+      "has_model_download": true,
       "io": {
         "in": "text",
         "out": "text"
@@ -243,10 +254,11 @@
     },
     {
       "key": "txt2video",
-      "skill_name": "LightX2V",
-      "name_cn": "本地视频生成 (LightX2V)",
+      "skill_name": "local-txt2video",
+      "name_cn": "本地文生视频",
       "question": "根据这段描述生成一段视频。",
       "flow_order": 2,
+      "has_model_download": true,
       "io": {
         "in": "text",
         "out": "video"
@@ -268,10 +280,11 @@
     },
     {
       "key": "paddleocr-vl",
-      "skill_name": "Local PaddleOCR-VL-1.5",
-      "name_cn": "本地文档结构化解析 (PaddleOCR-VL)",
+      "skill_name": "local-ocr-gpu",
+      "name_cn": "本地 GPU 文字识别 / 文档结构化解析 (PaddleOCR-VL-1.5)",
       "question": "帮我把这份发票/表单/报表解析成结构化数据。",
       "flow_order": 1,
+      "has_model_download": true,
       "io": {
         "in": "document",
         "out": "text"
@@ -299,10 +312,11 @@
     },
     {
       "key": "yolo26",
-      "skill_name": "Yolo26",
-      "name_cn": "本地目标检测 (YOLO26)",
+      "skill_name": "local-yolo26",
+      "name_cn": "本地实时物体检测 (YOLO26)",
       "question": "检测这张图片里有哪些物体。",
       "flow_order": 3,
+      "has_model_download": true,
       "io": {
         "in": "image",
         "out": "labels"
@@ -328,32 +342,102 @@
       ]
     },
     {
-      "key": "desktop-pet",
-      "skill_name": "Desktop Pet",
-      "name_cn": "本地桌宠 (Desktop Pet)",
-      "question": "帮我部署一个本地桌宠。",
+      "key": "sr",
+      "skill_name": "local-sr",
+      "name_cn": "本地图片超分放大 (Super-Resolution)",
+      "question": "把这张图片放大 4 倍 / 变清晰。",
+      "flow_order": 3,
+      "has_model_download": true,
+      "io": {
+        "in": "image",
+        "out": "image"
+      },
+      "keywords": [
+        "超分",
+        "超分辨率",
+        "图片放大",
+        "放大图片",
+        "把图片放大",
+        "照片放大",
+        "放大4倍",
+        "放大 4 倍",
+        "无损放大",
+        "变清晰",
+        "提升分辨率",
+        "高清化",
+        "老照片修复",
+        "upscale",
+        "super resolution",
+        "esrgan",
+        "real-esrgan"
+      ]
+    },
+    {
+      "key": "scene-recognition",
+      "skill_name": "local-scene-recognition",
+      "name_cn": "本地启蒙学习助手 (摄像头场景识别)",
+      "question": "打开启蒙学习助手，对着摄像头出示卡片就能语音讲解。",
+      "flow_order": 0,
+      "has_model_download": true,
+      "io": {
+        "in": "camera",
+        "out": "text"
+      },
+      "keywords": [
+        "启蒙",
+        "启蒙学习",
+        "识字卡",
+        "单词卡",
+        "闪卡",
+        "算术卡",
+        "这个用英语怎么说",
+        "这是多少钱",
+        "硬币识别",
+        "摄像头识别",
+        "对着摄像头",
+        "flashcard",
+        "word card",
+        "early learning"
+      ]
+    },
+    {
+      "key": "iqiyi",
+      "skill_name": "iqiyi",
+      "name_cn": "爱奇艺视频",
+      "question": "帮我搜一部电影并播放。",
       "flow_order": 9,
+      "has_model_download": false,
       "io": {
         "in": "text",
         "out": "none"
       },
       "keywords": [
-        "桌宠",
-        "桌面宠物",
-        "虚拟宠物",
-        "desktop pet",
-        "minicpm 桌宠",
-        "养个宠物",
-        "桌面伴侣",
-        "陪聊桌宠"
+        "爱奇艺",
+        "iqiyi",
+        "看电影",
+        "找几部",
+        "搜一下电影",
+        "搜电视剧",
+        "播放《",
+        "播放第",
+        "播放电影",
+        "播放电视剧",
+        "播放剧集",
+        "切下一集",
+        "追剧",
+        "片单",
+        "综艺",
+        "影片简介",
+        "看剧"
       ]
     },
     {
       "key": "game-guide",
-      "skill_name": "AI游戏路书Skill",
+      "skill_name": "game-assistant-walkthrough",
       "name_cn": "AI 游戏路书",
       "question": "帮我做一个游戏实时攻略助手。",
       "flow_order": 9,
+      "has_model_download": true,
       "io": {
         "in": "screen",
         "out": "text"
@@ -527,7 +611,7 @@
       ]
     }
   ],
-  "_gap_signals_doc": "15 个预设原子能力覆盖不到的能力。命中时不代表要放弃预设能力：能被预设覆盖的阶段照常用预设原子，只有这些缺口阶段才参考 dev skill 单独开发（route 用 gaps= 字段返回）。",
+  "_gap_signals_doc": "17 个预设原子能力覆盖不到的能力。命中时不代表要放弃预设能力：能被预设覆盖的阶段照常用预设原子，只有这些缺口阶段才参考 dev skill 单独开发（route 用 gaps= 字段返回）。",
   "gap_signals": [
     {
       "id": "voice-clone",

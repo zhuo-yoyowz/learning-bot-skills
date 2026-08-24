@@ -2,7 +2,7 @@
   Smoke test for the learning-bot launcher skill.
 
   Offline & network-free: exercises menu + routing (stdlib-only) and validates the skills
-  registry (15 published preset skills) and the [SKILL_RESULT] contracts. Nothing here
+  registry (17 published preset skills) and the [SKILL_RESULT] contracts. Nothing here
   touches the network: the skills are already published and are invoked by skill_name.
 
   Usage:  powershell -ExecutionPolicy Bypass -File test_learning_bot.ps1
@@ -38,7 +38,7 @@ Check "py_compile learning_bot.py" { & $Py -m py_compile $Bot; $LASTEXITCODE -eq
 Check "--menu exit 0"             { $LASTEXITCODE -eq 0 }
 
 Write-Host ""
-Write-Host "2. Registry is well-formed (15 preset skills + 3 dev skills)" -ForegroundColor White
+Write-Host "2. Registry is well-formed (17 preset skills + 3 dev skills)" -ForegroundColor White
 $reg = $null
 try { $reg = Get-Content -Raw -Encoding UTF8 $Registry | ConvertFrom-Json } catch { $reg = $null }
 Check "registry parses as JSON"        { $null -ne $reg }
@@ -46,25 +46,49 @@ Check "no download URLs in the registry" {
   # skill 已上架，按 skill_name 调用；registry 里不应再残留 release/base_url/zip。
   (-not $reg.release) -and ((($reg.preset_skills | Where-Object { $_.zip }) | Measure-Object).Count -eq 0)
 }
-Check "15 preset skills"               { $reg.preset_skills.Count -eq 15 }
+Check "17 preset skills"               { $reg.preset_skills.Count -eq 17 }
 Check "3 dev skills (ENV/FETCH/PIPE)"  { $reg.dev_skills.Count -eq 3 }
 Check "every preset has key/skill_name/question/keywords" {
   $bad = $reg.preset_skills | Where-Object { -not $_.key -or -not $_.skill_name -or -not $_.question -or -not $_.keywords }
   ($bad | Measure-Object).Count -eq 0
 }
-# 与 Intel AI PC Skills 清单（docx）逐条对应的 15 个已上架能力
-$expectedKeys = @("asr","tts","txt2img","computer-use","ocr-npu","mineru","screenshot-qa","vram","img2img","realtime-translator","txt2video","paddleocr-vl","yolo26","desktop-pet","game-guide")
-Check "all 15 expected keys present" {
+Check "every preset declares has_model_download" {
+  $bad = $reg.preset_skills | Where-Object { $null -eq $_.has_model_download }
+  ($bad | Measure-Object).Count -eq 0
+}
+Check "only vram/iqiyi are download-free" {
+  $free = @($reg.preset_skills | Where-Object { -not $_.has_model_download } | ForEach-Object { $_.key } | Sort-Object)
+  (($free -join ",") -eq "iqiyi,vram")
+}
+# 与 Intel AI PC Skills 清单（docx / release 1.0.9）逐条对应的 17 个已上架能力
+$expectedKeys = @("asr","tts","txt2img","computer-use","ocr-npu","mineru","screenshot-qa","vram","img2img","realtime-translator","txt2video","paddleocr-vl","yolo26","sr","scene-recognition","iqiyi","game-guide")
+Check "all 17 expected keys present" {
   $have = $reg.preset_skills | ForEach-Object { $_.key }
   ($expectedKeys | Where-Object { $have -notcontains $_ } | Measure-Object).Count -eq 0
 }
+Check "retired desktop-pet is gone" {
+  ($reg.preset_skills | ForEach-Object { $_.key }) -notcontains "desktop-pet"
+}
 
 Write-Host ""
-Write-Host "3. Menu emits a valid [SKILL_RESULT] (action=menu, count=15)" -ForegroundColor White
+Write-Host "3. Menu emits a valid [SKILL_RESULT] (action=menu, count=17)" -ForegroundColor White
 $menu = & $Py $Bot --menu 2>&1 | Out-String
 Check "menu SKILL_RESULT block" { $menu -match "\[SKILL_RESULT\]" -and $menu -match "\[/SKILL_RESULT\]" }
 Check "menu action=menu"        { $menu -match "action=menu" }
-Check "menu count=15"           { $menu -match "count=15" }
+Check "menu count=17"           { $menu -match "count=17" }
+Check "menu carries model_download flags" { $menu -match '"model_download": true' }
+
+Write-Host ""
+Write-Host "3b. Resolve exposes the download-progress contract" -ForegroundColor White
+$rAsr = & $Py $Bot --resolve asr 2>&1 | Out-String
+Check "resolve asr -> skill_name=Local ASR"     { $rAsr -match "skill_name=Local ASR" }
+Check "resolve asr -> progress_required=true"   { $rAsr -match "progress_required=true" }
+Check "resolve asr -> progress_note present"    { $rAsr -match "progress_note=" }
+$rVram = & $Py $Bot --resolve vram 2>&1 | Out-String
+Check "resolve vram -> progress_required=false" { $rVram -match "progress_required=false" }
+Check "resolve vram -> no progress_note"        { $rVram -notmatch "progress_note=" }
+$rSr = & $Py $Bot --resolve sr 2>&1 | Out-String
+Check "resolve sr -> skill_name=local-sr"       { $rSr -match "skill_name=local-sr" }
 
 Write-Host ""
 Write-Host "4. Routing: preset inputs map to the expected preset skill" -ForegroundColor White
@@ -82,6 +106,9 @@ $presetCases = @{
   "帮我截个屏回答屏幕内容的问题"    = "screenshot-qa"
   "帮我自动操作电脑完成任务"        = "computer-use"
   "看看我现在的显存占用"            = "vram"
+  "把这张图片放大4倍"                = "sr"
+  "打开启蒙学习助手"                = "scene-recognition"
+  "帮我搜一下爱奇艺上的电影"        = "iqiyi"
 }
 foreach ($k in $presetCases.Keys) {
   $want = $presetCases[$k]
@@ -92,7 +119,7 @@ foreach ($k in $presetCases.Keys) {
 
 Write-Host ""
 Write-Host "4b. Routing: composite requests chain preset atoms (scope=compose)" -ForegroundColor White
-# 核心原则的回归测试：14 个预设能力是原子积木。需要多个能力的请求必须组合成一条有序链，
+# 核心原则的回归测试：17 个预设能力是原子积木。需要多个能力的请求必须组合成一条有序链，
 # 而不是截断成单个 preset，更不是因为「没有单个 skill 能做」就整个甩给开发类 skill。
 $composeCases = @{
   "把这张图里的文字提取出来，然后读给我听"   = "ocr-npu,tts"
@@ -198,14 +225,14 @@ foreach ($t in @("preset","preflight","clarify","all")) {
   $qo = & $Py $Bot --questions $t 2>&1 | Out-String
   Check "questions --questions $t valid block" { Test-Questions "learning-bot" $qo }
 }
-# preset is single-sourced from the registry (15 preset skills)
+# preset is single-sourced from the registry (17 preset skills)
 $qp = & $Py $Bot --questions preset 2>&1 | Out-String
 $qpCount = if ($qp -match "count=(\d+)") { [int]$Matches[1] } else { -1 }
-Check "preset question offers all 15 skills" {
+Check "preset question offers all 17 skills" {
   $dt = ($qp -split "`r?`n" | Where-Object { $_ -like "data=*" } | Select-Object -First 1)
   if (-not $dt) { return $false }
   try { $arr = @($dt.Substring(5) | ConvertFrom-Json) } catch { return $false }
-  ($arr[0].options | Measure-Object).Count -eq 15
+  ($arr[0].options | Measure-Object).Count -eq 17
 }
 
 Write-Host ""

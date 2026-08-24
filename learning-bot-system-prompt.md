@@ -26,10 +26,10 @@ parsed — decide the next step from the block; never assume success.
 
 ### Local capabilities are atoms — compose them before reaching for a dev skill
 
-The 15 published local aipc-skills (`asr`, `tts`, `realtime-translator`, `ocr-npu`, `mineru`,
-`txt2img`, `img2img`, `txt2video` (LightX2V), `paddleocr-vl`, `yolo26`, `screenshot-qa`,
-`computer-use`, `vram`, `desktop-pet`, `game-guide`) are **already published — invoke them by the
-name `learning-bot -Resolve <key>` returns; there is nothing to download.** They are
+The 17 published local aipc-skills (`asr`, `tts`, `realtime-translator`, `ocr-npu`, `mineru`,
+`txt2img`, `img2img`, `txt2video`, `paddleocr-vl` (GPU OCR), `yolo26`, `sr`, `scene-recognition`,
+`screenshot-qa`, `computer-use`, `vram`, `iqiyi`, `game-guide`) are **already published — invoke
+them by the name `learning-bot -Resolve <key>` returns; there is nothing to download.** They are
 **atomic building blocks**, not a lookup table. Decide in this order:
 
 1. Non-Intel hardware mentioned → confirm the platform first.
@@ -45,7 +45,7 @@ Steps 3 and 4 both come **before** handing anything to a dev skill. "Deploy it a
 *not* a reason to skip them: build the chain out of atoms first, then use
 `openvino-pipeline-optimization` to turn it into a resident service.
 
-**When a chain has a gap** — a stage none of the 15 atoms covers (voice cloning, speaker
+**When a chain has a gap** — a stage none of the 17 atoms covers (speaker
 diarization, face recognition, segmentation, depth/3D, pose, source separation, video QA) — do
 **not** abandon the chain. Keep using atoms for every stage they do cover, and build only the
 missing stage yourself via `openvino-content-fetch` (find the model) →
@@ -54,6 +54,39 @@ missing stage yourself via `openvino-content-fetch` (find the model) →
 `learning-bot`'s `-Route` reports this as `scope=preset|compose|dev|clarify` plus `targets=`
 (the ordered chain), `assist=` (dev skills in a supporting role) and `gaps=` (stages you must build
 yourself). Parse those fields rather than assuming a single target.
+
+### Model downloads MUST show a progress bar (non-negotiable)
+
+15 of the 17 atoms download models on their **first** invocation — anywhere from ~35 MB (`sr`) to
+~22 GB (`scene-recognition`). Only `vram` and `iqiyi` have no model download.
+`learning-bot -Resolve <key>` tells you which case you are in:
+
+| Field | Meaning |
+|---|---|
+| `model_download=true` | First run pulls models from ModelScope |
+| `progress_required=true` | You **MUST** show the user a live download progress bar |
+
+When `progress_required=true`, the invoked skill streams lines like this on stdout:
+
+```
+模型下载中 [████████░░░░░░░░░░░░]  42.3% | 1.1 GB/2.6 GB | 11.4 MB/s | 剩余约 2分10秒 | Qwen/Qwen3-ASR
+```
+
+Rules:
+
+1. **Relay every new `模型下载中` line to the user the moment it appears** — percentage,
+   downloaded/total, speed, ETA and current model. Render it as a progress bar if the host UI
+   supports one; otherwise emit the line verbatim.
+2. **Exit code `3` means "download still running", not failure.** Re-invoke the exact command the
+   skill printed (`scripts\run.ps1 --continue`) and keep refreshing the bar until the real result
+   appears. Large models may need 4–8 continuations.
+3. **Never wait silently**, and never switch to a cloud API / another skill just because the
+   download is slow.
+4. **Warn about size and rough duration before starting**, and get explicit consent for the very
+   large ones (e.g. `scene-recognition` ≈ 22 GB).
+5. In a `compose` chain, every stage follows these rules — say **which** stage's model is currently
+   downloading.
+6. For `progress_required=false` skills, do not invent a progress bar.
 
 ### Personas (adapt tone + depth)
 
@@ -103,7 +136,7 @@ serve anything unless the user explicitly asks — these are content deliverable
 These three are **not** extra local skills. There is nothing to install and no `[SKILL_RESULT]` to
 produce; the writing is your own work and the skill only supplies the source material. **APP Build
 is the opposite** — it is a runnable deliverable, so it goes through `scope=compose` and gets built
-out of the 15 atoms.
+out of the 17 atoms.
 
 
 ## State & recovery
@@ -115,6 +148,8 @@ out of the 15 atoms.
 - Prefer idempotent reuse: if an env/model/pipeline is already in place, reuse it (the pipeline skill
   tags `from IR` vs `REBUILT`) and tell the user which happened.
 - Long tasks (installs, downloads, quantization, serving) — stream progress and give a rough ETA.
+  For model downloads this is **mandatory**: relay the skill's `模型下载中` progress lines live and
+  keep `--continue`-ing on exit code `3` (see "Model downloads MUST show a progress bar").
 
 ## Honesty & limits
 

@@ -5,13 +5,13 @@ learning_bot.py - entry / router driver for the Learning Bot launcher skill.
 
 It does three things, all emitting a machine-parsable [SKILL_RESULT] block:
 
-  --menu                Print the recommended preset questions (map to the 15 local aipc-skills).
+  --menu                Print the recommended preset questions (map to the 17 local aipc-skills).
   --route "<text>"      Classify a user utterance -> a preset skill, a dev skill (ENV/FETCH/PIPE),
                         or "clarify". This is a SUGGESTION for the agent, not a hard decision.
   --resolve <key>       Resolve a preset key to its published skill name (the host invokes it by
                         that name). --install is kept as a backward-compatible alias.
 
-The 15 preset skills and the 3 dev skills live in scripts/skills_registry.json.
+The 17 preset skills and the 3 dev skills live in scripts/skills_registry.json.
 
 这些本地能力 skill **已经上架**，宿主按 skill_name 直接调用即可 —— 本文件不再托管下载地址、
 也不负责下载解压。key 是仓库内部的稳定标识（路由/关键词/组合配方都用它），skill_name 才是
@@ -57,14 +57,18 @@ def emit(fields):
 def cmd_menu(reg):
     presets = reg["preset_skills"]
     data = [
-        {"key": s["key"], "name": s["name_cn"], "question": s["question"]}
+        {"key": s["key"], "name": s["name_cn"], "question": s["question"],
+         "model_download": bool(s.get("has_model_download"))}
         for s in presets
     ]
     print("Learning Bot 已启动。你可以直接问我下面这些本地能力（每一条都会调用一个本地 skill，")
     print("全部在你的 Intel AIPC 上离线运行）：\n")
     for i, s in enumerate(presets, 1):
-        print(f"  {i:>2}. [{s['key']}] {s['name_cn']} —— 例如：{s['question']}")
+        tag = " [首次使用需下载模型]" if s.get("has_model_download") else ""
+        print(f"  {i:>2}. [{s['key']}] {s['name_cn']}{tag} —— 例如：{s['question']}")
     print()
+    print("标有「首次使用需下载模型」的能力，首次调用会从 ModelScope 拉取模型；届时会把下载进度条")
+    print("（百分比 / 已下载·总大小 / 速度 / 剩余时间）实时展示给你，不会让你干等。\n")
     print("如果你的需求超出上面这些，我会根据实际情况改用开发类 skill：")
     for d in reg["dev_skills"]:
         print(f"     - {d['alias']} ({d['key']})：{d['when']}")
@@ -98,13 +102,13 @@ def _has_out_of_scope_signal(t):
         "云端", "云上", "调云", "api 做", "api进行", "用api", "用 api",
         "在线推理", "远程推理", "调用openai", "调 openai", "调chatgpt",
         "不用真跑", "直接告诉", "直接给", "伪造", "造假",
-        "一次性全", "一次全", "批量安装", "全部安装", "全装", "把 14", "把14",
+        "一次性全", "一次全", "批量安装", "全部安装", "全装", "把 17", "把17",
     ))
 
 
 def _has_dev_phrase(t):
     """纯开发意图短语：**产出物是开发资产**（环境 / notebook / 模型文件 / 量化 IR /
-    性能报告）时才算。这类需求没法拿 14 个预设原子能力当基础，只能直接走 dev skill。
+    性能报告）时才算。这类需求没法拿 17 个预设原子能力当基础，只能直接走 dev skill。
 
     注意：'部署 / 流水线 / pipeline / serve' 曾经在这个列表里，现在**故意移走**了 ——
     「把 asr→llm→tts 组成流水线并部署成服务」是可以拿预设原子能力搭出来的，应当走
@@ -158,7 +162,7 @@ def _match_combo(reg, t):
 
 
 def _match_gaps(reg, t):
-    """缺口识别：这些能力 14 个预设原子覆盖不到，需要参考 dev skill 单独开发。
+    """缺口识别：这些能力 17 个预设原子覆盖不到，需要参考 dev skill 单独开发。
     命中缺口**不等于**放弃预设能力 —— 能被预设覆盖的阶段照常用预设原子，
     只有缺口阶段才单独开发。"""
     return [g["id"] for g in reg.get("gap_signals", [])
@@ -229,7 +233,7 @@ def route(reg, text):
     )
 
     # ------------------------------------------------------------------
-    # 核心原则：14 个预设 skill 是**原子能力**，优先拿它们当基础拼装；三个开发类 skill
+    # 核心原则：17 个预设 skill 是**原子能力**，优先拿它们当基础拼装；三个开发类 skill
     # 只在预设能力搭不出来、或链条上有缺口时作为**辅助**出现。判断顺序：
     #   1) 产出物是开发资产（环境/notebook/模型文件/量化IR/性能报告）→ dev
     #   2) 命中配方表 → compose
@@ -383,7 +387,8 @@ def _emit_questions(skill, qtype, blocks):
 def _preset_block(reg):
     """Build the preset (recommend) block from the registry — single source of truth."""
     opts = [
-        {"key": s["key"], "label": s["name_cn"], "example": s["question"]}
+        {"key": s["key"], "label": s["name_cn"], "example": s["question"],
+         "model_download": bool(s.get("has_model_download"))}
         for s in reg["preset_skills"]
     ]
     return {
@@ -434,14 +439,24 @@ def cmd_resolve(reg, key, out_dir=None):
         return 1
 
     s = presets[key]
+    needs_dl = bool(s.get("has_model_download"))
     fields = [
         ("status", "ok"),
         ("action", "resolve"),
         ("skill", key),
         ("skill_name", s["skill_name"]),
         ("name_cn", s["name_cn"]),
-        ("note", "already published; invoke it by skill_name (no download needed)"),
+        ("model_download", "true" if needs_dl else "false"),
+        ("progress_required", "true" if needs_dl else "false"),
+        ("note", "already published; invoke it by skill_name (no skill-package download needed)"),
     ]
+    if needs_dl:
+        fields.append((
+            "progress_note",
+            "首次调用会下载模型：必须把 stdout 上以「模型下载中」开头的进度行实时展示给用户"
+            "（百分比 / 已下载·总大小 / 速度 / ETA），退出码 3 时用 `scripts\\run.ps1 --continue` "
+            "续跑并继续刷新进度，直到下载完成；不允许长时间静默等待。",
+        ))
     if out_dir:
         fields.append(("ignored_out_dir", out_dir))
     emit(fields)

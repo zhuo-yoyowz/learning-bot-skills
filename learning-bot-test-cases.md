@@ -53,7 +53,7 @@ Bot 是否正确识别意图、选择并编排合适的 skill、并遵守诚实�
 
 > **归属规则**：产出物是**散文文档**（PRD / 培训材料 / 学习路径）→ `scope=synthesize`，
 > FETCH 只取素材、正文由 agent 自己写；产出物是**可运行的应用**（APP Build）→ `scope=compose`，
-> 用 15 个预设原子能力拼出来。这四类里只有 APP Build 属于 skill 干的活。
+> 用 17 个预设原子能力拼出来。这四类里只有 APP Build 属于 skill 干的活。
 
 ## 4. Persona 敏感度
 

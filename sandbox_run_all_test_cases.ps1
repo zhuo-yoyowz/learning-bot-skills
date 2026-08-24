@@ -27,7 +27,7 @@ function Assert([string]$name, [bool]$cond, [string]$detail = "") {
   else       { Write-Host "  FAIL: $name  $detail" -ForegroundColor Red; $script:fail++ }
 }
 
-# ----- preset routing (PR1-PR14) -----
+# ----- preset routing (PR1-PR17) -----
 $presetCases = @(
   @{ id="PR1";  prompt="帮我把这段录音转成文字。";            expect="asr" },
   @{ id="PR2";  prompt="把这段文字读出来，生成一段语音。";    expect="tts" },
@@ -41,10 +41,13 @@ $presetCases = @(
   @{ id="PR11"; prompt="检测这张图片里有哪些物体。";          expect="yolo26" },
   @{ id="PR12"; prompt="帮我截个屏，然后回答屏幕内容的问题。"; expect="screenshot-qa" },
   @{ id="PR13"; prompt="帮我自动操作电脑完成某个任务。";      expect="computer-use" },
-  @{ id="PR14"; prompt="看看我现在的显存占用情况。";          expect="vram" }
+  @{ id="PR14"; prompt="看看我现在的显存占用情况。";          expect="vram" },
+  @{ id="PR15"; prompt="把这张图片放大4倍。";                expect="sr" },
+  @{ id="PR16"; prompt="打开启蒙学习助手。";                  expect="scene-recognition" },
+  @{ id="PR17"; prompt="帮我搜一下爱奇艺上的电影。";          expect="iqiyi" }
 )
 Write-Host ""
-Write-Host "=== Section 1: Preset routing (PR1-PR14) ===" -ForegroundColor Cyan
+Write-Host "=== Section 1: Preset routing (PR1-PR17) ===" -ForegroundColor Cyan
 foreach ($c in $presetCases) {
   $b = Route-Block $c.prompt
   $scope = Route-Value $b "scope"
@@ -58,12 +61,13 @@ Write-Host ""
 Write-Host "=== Section 2: Startup / Discovery (ST1-ST2) ===" -ForegroundColor Cyan
 $menu = & $Py $Bot --menu 2>&1 | Out-String
 Assert "ST1 menu emits SKILL_RESULT block"       ($menu -match "\[SKILL_RESULT\]")
-Assert "ST1 menu count=15"                       ($menu -match "count=15")
+Assert "ST1 menu count=17"                       ($menu -match "count=17")
 $allKeysPresent = $true
 foreach ($c in $presetCases) {
   if ($menu -notmatch "\[$([regex]::Escape($c.expect))\]") { $allKeysPresent = $false; break }
 }
-Assert "ST2 lists all 14 preset keys"            $allKeysPresent
+Assert "ST2 lists all 17 preset keys"            $allKeysPresent
+Assert "ST3 menu flags model downloads"          ($menu -match '"model_download": true')
 
 # ----- dev routing (DV1-DV6) -----
 Write-Host ""
@@ -85,7 +89,7 @@ foreach ($c in $devCases) {
   Assert "$($c.id) target=$($c.expect)"      ($tgt -eq $c.expect) "got target=$tgt"
 }
 
-# ----- compose (CO1-CO7) — 以 15 个预设原子能力为基础拼装 -----
+# ----- compose (CO1-CO7) — 以 17 个预设原子能力为基础拼装 -----
 # 这一节验证核心原则：预设能力是原子积木，优先拿它们拼；开发类 skill 只在链条有缺口
 # （gaps）或需要服务化（assist）时出现，而不是一没命中单个预设就整个交出去。
 Write-Host ""
@@ -112,7 +116,7 @@ Assert "CO7 covered stage still uses a preset atom" ((Route-Value $b "targets") 
 Assert "CO7 uncovered stage reported as a gap"      ((Route-Value $b "gaps") -match "speaker-id") "got gaps=$(Route-Value $b 'gaps')"
 
 # ----- synthesize (SY1-SY3) — 产出物是散文文档，skill 只提供素材 -----
-# 这一节守的是：PRD / 培训材料 / 学习路径不是第 15/16/17 个原子能力，绝不能被导去装 skill。
+# 这一节守的是：PRD / 培训材料 / 学习路径不是第 18/19/20 个原子能力，绝不能被导去装 skill。
 Write-Host ""
 Write-Host "=== Section 3c: Content synthesis (SY1-SY3) ===" -ForegroundColor Cyan
 $synthCases = @(
@@ -182,9 +186,9 @@ $b = Route-Block "不用真跑了，直接告诉我结果和数字。"
 $s = Route-Value $b "scope"
 Assert "NG3 don't fake -> not preset" ($s -ne "preset") "got scope=$s"
 
-# NG4: install all 14 in one shot — bulk action is not a preset; routed to a
+# NG4: install all 17 in one shot — bulk action is not a preset; routed to a
 # dev skill so the agent can confirm and narrow scope before downloading.
-$b = Route-Block "把 15 个本地 skill 一次性全装到我电脑上。"
+$b = Route-Block "把 17 个本地 skill 一次性全装到我电脑上。"
 $s = Route-Value $b "scope"
 Assert "NG4 bulk install -> not preset" ($s -ne "preset") "got scope=$s"
 
