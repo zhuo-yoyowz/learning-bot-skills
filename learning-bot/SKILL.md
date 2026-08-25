@@ -101,9 +101,32 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts
 powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts\run.ps1" -Install asr -OutDir D:\aipc-skills -Force
 ```
 
-下载地址由 registry 的 `release.base_url` + 该 skill 的 `zip` 字段拼成，发布页：
-https://github.com/makejiang/aipc-skills/releases/tag/1.0.9
-。`-Resolve` 也会把完整地址放在 `fallback_url=` 里，方便你提前判断。
+每个 skill 的完整备用下载地址写死在 registry 的 `backup_url` 字段里（不需要自己拼），
+`-Resolve <key>` 会把它放在 `fallback_url=` 里、`-Menu` 的 `data` 里每一条也带 `backup_url`。
+发布页：https://github.com/makejiang/aipc-skills/releases/tag/1.0.9
+
+| key | 备用下载地址（Release 1.0.9） |
+|---|---|
+| `asr` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-asr-1.0.5-20260824-104334.zip |
+| `tts` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-tts-1.0.7-20260824-104436.zip |
+| `txt2img` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-txt2img-1.0.5-20260824-104437.zip |
+| `computer-use` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-computer-use-1.0.5-20260824-104336.zip |
+| `ocr-npu` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-ocr-npu-1.0.5-20260824-104346.zip |
+| `mineru` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-mineru-1.0.5-20260824-104344.zip |
+| `screenshot-qa` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-screenshot-qa-1.0.5-20260824-104434.zip |
+| `vram` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-vram-1.0.5-20260824-104442.zip |
+| `img2img` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-img2img-1.0.5-20260824-104339.zip |
+| `realtime-translator` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-realtime-translator-1.0.5-20260824-104358.zip |
+| `txt2video` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-txt2video-1.0.7-20260824-104442.zip |
+| `paddleocr-vl` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-ocr-gpu-1.0.5-20260824-104345.zip |
+| `yolo26` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-yolo26-1.0.5-20260824-104443.zip |
+| `sr` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-sr-1.0.6-20260824-104435.zip |
+| `scene-recognition` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-scene-recognition-1.0.7-20260824-104433.zip |
+| `iqiyi` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-iqiyi-1.0.1-20260824-104333.zip |
+| `game-guide` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-game-assistant-walkthrough-1.0.1-20260824-104332.zip |
+
+> 这张表是给人看的副本，**真正的单一来源是 registry 的 `backup_url` 字段** ——
+> 代码只读 registry，不要把地址硬编码进调用逻辑。
 
 约定：
 
@@ -407,7 +430,7 @@ preflight/clarify 的题目定义在 [`scripts/questions.json`](scripts/question
 status=ok
 action=menu
 count=17
-data=[{"key":..,"name":..,"question":..,"model_download":true|false}, ...]
+data=[{"key":..,"name":..,"question":..,"model_download":true|false,"backup_url":..}, ...]
 [/SKILL_RESULT]
 ```
 

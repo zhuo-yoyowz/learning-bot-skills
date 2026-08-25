@@ -64,7 +64,8 @@ def cmd_menu(reg):
     presets = reg["preset_skills"]
     data = [
         {"key": s["key"], "name": s["name_cn"], "question": s["question"],
-         "model_download": bool(s.get("has_model_download"))}
+         "model_download": bool(s.get("has_model_download")),
+         "backup_url": _fallback_url(reg, s)}
         for s in presets
     ]
     print("Learning Bot 已启动。你可以直接问我下面这些本地能力（每一条都会调用一个本地 skill，")
@@ -74,7 +75,9 @@ def cmd_menu(reg):
         print(f"  {i:>2}. [{s['key']}] {s['name_cn']}{tag} —— 例如：{s['question']}")
     print()
     print("标有「首次使用需下载模型」的能力，首次调用会从 ModelScope 拉取模型；届时会把下载进度条")
-    print("（百分比 / 已下载·总大小 / 速度 / 剩余时间）实时展示给你，不会让你干等。\n")
+    print("（百分比 / 已下载·总大小 / 速度 / 剩余时间）实时展示给你，不会让你干等。")
+    print("每个能力都附有备用下载地址（data 里的 backup_url）：本机没预置某个 skill 时，")
+    print("用 -Install <key> 从那个地址下载并解压，不用放弃、也不用改走云端。\n")
     print("如果你的需求超出上面这些，我会根据实际情况改用开发类 skill：")
     for d in reg["dev_skills"]:
         print(f"     - {d['alias']} ({d['key']})：{d['when']}")
@@ -394,7 +397,8 @@ def _preset_block(reg):
     """Build the preset (recommend) block from the registry — single source of truth."""
     opts = [
         {"key": s["key"], "label": s["name_cn"], "example": s["question"],
-         "model_download": bool(s.get("has_model_download"))}
+         "model_download": bool(s.get("has_model_download")),
+         "backup_url": _fallback_url(reg, s)}
         for s in reg["preset_skills"]
     ]
     return {
@@ -488,6 +492,10 @@ DEFAULT_INSTALL_ROOT = Path(os.path.expanduser("~")) / ".openvino" / "aipc-skill
 
 
 def _fallback_url(reg, skill):
+    """Per-skill backup_url wins; base_url + zip is only a safety net for older registries."""
+    explicit = (skill.get("backup_url") or "").strip()
+    if explicit:
+        return explicit
     base = (reg.get("release") or {}).get("base_url", "")
     zip_name = skill.get("zip", "")
     return base + zip_name if base and zip_name else ""

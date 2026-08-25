@@ -2,7 +2,7 @@
   "_publish_doc": "这 17 个本地能力 skill 已经上架（Intel AI PC Skills release 1.0.9），宿主可直接按 skill_name（Intel AI PC Skills 清单里的官方名）调用，learning-bot 不再托管下载地址、也不负责下载解压。key 是本仓库内部稳定标识，用于路由/关键词/组合配方；skill_name 才是对外调用名。两者不要混用。",
   "_flow_order_doc": "组合链的排序权重：0 capture / 1 extract(媒体→文本) / 2 generate(文本→媒体) / 3 transform(同模态加工) / 4 speak(链尾) / 9 util(不参与组合排序)。顺序有歧义时以 combos 配方表为准。",
   "_progress_doc": "has_model_download=true 的 skill 首次调用会下载模型：它们的 stdout 会打印以「模型下载中」开头的进度行（百分比 / 已下载·总大小 / 速度 / ETA / 当前模型），退出码 3 表示下载未完成。调用方**必须**把最新进度行实时转达给用户（渲染成进度条），并持续以 `scripts\\run.ps1 --continue` 续跑直到下载结束，禁止长时间静默等待。has_model_download=false 的 skill 没有模型下载，不需要进度条。",
-  "_fallback_doc": "备用方案（fallback）：宿主上找不到某个已上架的 AIPC skill 时，可用 -Install <key> 从下面 release 的 base_url + 该 skill 的 zip 字段拼出下载地址，下载并解压到本地。正常情况下依然优先按 skill_name 直接调用（-Resolve），只有宿主未预置该 skill 时才走这条备用路径。",
+  "_fallback_doc": "备用方案（fallback）：宿主上找不到某个已上架的 AIPC skill 时，用 -Install <key> 从该 skill 的 backup_url 下载技能包并解压到本地。每个 preset skill 都直接写死了完整的 backup_url，不需要拼接；zip 字段保留为文件名（也是解压后的目录名）。release.base_url 只在 backup_url 缺失时作为兆回。正常情况下依然优先按 skill_name 直接调用（-Resolve），只有宿主未预置该 skill 时才走这条备用路径。",
   "release": {
     "tag": "1.0.9",
     "page": "https://github.com/makejiang/aipc-skills/releases/tag/1.0.9",
@@ -34,7 +34,8 @@
         "whisper",
         "录音"
       ],
-      "zip": "skill-local-asr-1.0.5-20260824-104334.zip"
+      "zip": "skill-local-asr-1.0.5-20260824-104334.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-asr-1.0.5-20260824-104334.zip"
     },
     {
       "key": "tts",
@@ -61,7 +62,8 @@
         "念给我听",
         "读给我"
       ],
-      "zip": "skill-local-tts-1.0.7-20260824-104436.zip"
+      "zip": "skill-local-tts-1.0.7-20260824-104436.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-tts-1.0.7-20260824-104436.zip"
     },
     {
       "key": "txt2img",
@@ -85,7 +87,8 @@
         "生成图像",
         "作画"
       ],
-      "zip": "skill-local-txt2img-1.0.5-20260824-104437.zip"
+      "zip": "skill-local-txt2img-1.0.5-20260824-104437.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-txt2img-1.0.5-20260824-104437.zip"
     },
     {
       "key": "computer-use",
@@ -109,7 +112,8 @@
         "computer use",
         "gui automation"
       ],
-      "zip": "skill-local-computer-use-1.0.5-20260824-104336.zip"
+      "zip": "skill-local-computer-use-1.0.5-20260824-104336.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-computer-use-1.0.5-20260824-104336.zip"
     },
     {
       "key": "ocr-npu",
@@ -136,7 +140,8 @@
         "npu ocr",
         "text recognition"
       ],
-      "zip": "skill-local-ocr-npu-1.0.5-20260824-104346.zip"
+      "zip": "skill-local-ocr-npu-1.0.5-20260824-104346.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-ocr-npu-1.0.5-20260824-104346.zip"
     },
     {
       "key": "mineru",
@@ -167,7 +172,8 @@
         "卷宗",
         "研报"
       ],
-      "zip": "skill-local-mineru-1.0.5-20260824-104344.zip"
+      "zip": "skill-local-mineru-1.0.5-20260824-104344.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-mineru-1.0.5-20260824-104344.zip"
     },
     {
       "key": "screenshot-qa",
@@ -190,7 +196,8 @@
         "screenshot",
         "screen qa"
       ],
-      "zip": "skill-local-screenshot-qa-1.0.5-20260824-104434.zip"
+      "zip": "skill-local-screenshot-qa-1.0.5-20260824-104434.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-screenshot-qa-1.0.5-20260824-104434.zip"
     },
     {
       "key": "vram",
@@ -218,7 +225,8 @@
         "显存设置",
         "shared vram"
       ],
-      "zip": "skill-local-vram-1.0.5-20260824-104442.zip"
+      "zip": "skill-local-vram-1.0.5-20260824-104442.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-vram-1.0.5-20260824-104442.zip"
     },
     {
       "key": "img2img",
@@ -241,7 +249,8 @@
         "img2img",
         "image to image"
       ],
-      "zip": "skill-local-img2img-1.0.5-20260824-104339.zip"
+      "zip": "skill-local-img2img-1.0.5-20260824-104339.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-img2img-1.0.5-20260824-104339.zip"
     },
     {
       "key": "realtime-translator",
@@ -266,7 +275,8 @@
         "翻译成",
         "再翻译"
       ],
-      "zip": "skill-local-realtime-translator-1.0.5-20260824-104358.zip"
+      "zip": "skill-local-realtime-translator-1.0.5-20260824-104358.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-realtime-translator-1.0.5-20260824-104358.zip"
     },
     {
       "key": "txt2video",
@@ -293,7 +303,8 @@
         "i2v",
         "t2v"
       ],
-      "zip": "skill-local-txt2video-1.0.7-20260824-104442.zip"
+      "zip": "skill-local-txt2video-1.0.7-20260824-104442.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-txt2video-1.0.7-20260824-104442.zip"
     },
     {
       "key": "paddleocr-vl",
@@ -326,7 +337,8 @@
         "图表解析",
         "生成notebook"
       ],
-      "zip": "skill-local-ocr-gpu-1.0.5-20260824-104345.zip"
+      "zip": "skill-local-ocr-gpu-1.0.5-20260824-104345.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-ocr-gpu-1.0.5-20260824-104345.zip"
     },
     {
       "key": "yolo26",
@@ -358,7 +370,8 @@
         "实时摄像头",
         "ultralytics"
       ],
-      "zip": "skill-local-yolo26-1.0.5-20260824-104443.zip"
+      "zip": "skill-local-yolo26-1.0.5-20260824-104443.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-yolo26-1.0.5-20260824-104443.zip"
     },
     {
       "key": "sr",
@@ -390,7 +403,8 @@
         "esrgan",
         "real-esrgan"
       ],
-      "zip": "skill-local-sr-1.0.6-20260824-104435.zip"
+      "zip": "skill-local-sr-1.0.6-20260824-104435.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-sr-1.0.6-20260824-104435.zip"
     },
     {
       "key": "scene-recognition",
@@ -419,7 +433,8 @@
         "word card",
         "early learning"
       ],
-      "zip": "skill-local-scene-recognition-1.0.7-20260824-104433.zip"
+      "zip": "skill-local-scene-recognition-1.0.7-20260824-104433.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-scene-recognition-1.0.7-20260824-104433.zip"
     },
     {
       "key": "iqiyi",
@@ -451,7 +466,8 @@
         "影片简介",
         "看剧"
       ],
-      "zip": "skill-iqiyi-1.0.1-20260824-104333.zip"
+      "zip": "skill-iqiyi-1.0.1-20260824-104333.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-iqiyi-1.0.1-20260824-104333.zip"
     },
     {
       "key": "game-guide",
@@ -475,7 +491,8 @@
         "攻略悬浮窗",
         "游戏进度"
       ],
-      "zip": "skill-game-assistant-walkthrough-1.0.1-20260824-104332.zip"
+      "zip": "skill-game-assistant-walkthrough-1.0.1-20260824-104332.zip",
+      "backup_url": "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-game-assistant-walkthrough-1.0.1-20260824-104332.zip"
     }
   ],
   "_combos_doc": "已知组合配方（白名单）。用于覆盖「会议纪要」「字幕助手」这类没有直白关键词、单靠多命中兜不住的说法。stages 的顺序就是执行顺序，优先级高于 flow_order 自动排序。",

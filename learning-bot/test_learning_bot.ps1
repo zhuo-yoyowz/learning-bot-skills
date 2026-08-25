@@ -49,6 +49,12 @@ Check "every preset carries a fallback zip" {
   $bad = $reg.preset_skills | Where-Object { -not $_.zip -or ($_.zip -notlike "*.zip") }
   ($bad | Measure-Object).Count -eq 0
 }
+Check "every preset carries an explicit backup_url" {
+  $bad = $reg.preset_skills | Where-Object {
+    -not $_.backup_url -or ($_.backup_url -ne ($reg.release.base_url + $_.zip))
+  }
+  ($bad | Measure-Object).Count -eq 0
+}
 Check "17 preset skills"               { $reg.preset_skills.Count -eq 17 }
 Check "3 dev skills (ENV/FETCH/PIPE)"  { $reg.dev_skills.Count -eq 3 }
 Check "every preset has key/skill_name/question/keywords" {
@@ -80,6 +86,11 @@ Check "menu SKILL_RESULT block" { $menu -match "\[SKILL_RESULT\]" -and $menu -ma
 Check "menu action=menu"        { $menu -match "action=menu" }
 Check "menu count=17"           { $menu -match "count=17" }
 Check "menu carries model_download flags" { $menu -match '"model_download": true' }
+# PS 5.1 的 ConvertFrom-Json 对顶层数组不做枚举，这里直接数原文里的字段出现次数更稳。
+Check "menu carries a backup_url per skill" {
+  $hits = [regex]::Matches($menu, '"backup_url": "https://github\.com/makejiang/aipc-skills/releases/download/1\.0\.9/[^"]+\.zip"')
+  $hits.Count -eq 17
+}
 
 Write-Host ""
 Write-Host "3b. Resolve exposes the download-progress contract" -ForegroundColor White
