@@ -82,8 +82,39 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts
    （Intel AIPC）离线运行的 aipc-skill。
 2. **路由（Route）** —— 见下面的「路由判断顺序」。
 3. **解析（Resolve）** —— 把内部 key 解析成上架后的官方 skill 名；这些 skill 已上架，宿主按名字直接调用，不需要下载。
+4. **安装（Install、备用方案）** —— **宿主上找不到该 skill 时**，从 AI PC Skills release 下载技能包并解压到本地。
 
 > 路由脚本给出的是**建议**，不是硬性判决。最终由 agent 结合上下文决定调用哪个 skill。
+
+---
+
+## 备用方案：skill 没预置时从 release 下载
+
+正常路径是「`-Resolve <key>` 拿到 `skill_name` → 宿主按名字调用」。但如果宿主上**根本没预置**
+这个 skill（按名字调不到 / 找不到该能力），不要就此放弃、也不要改走云端 —— 改用备用方案：
+
+```powershell
+# 从 AI PC Skills release 1.0.9 下载并解压技能包（默认装到 ~/.openvino/aipc-skills）
+powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts\run.ps1" -Install asr
+
+# 指定目录 / 强制重装
+powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts\run.ps1" -Install asr -OutDir D:\aipc-skills -Force
+```
+
+下载地址由 registry 的 `release.base_url` + 该 skill 的 `zip` 字段拼成，发布页：
+https://github.com/makejiang/aipc-skills/releases/tag/1.0.9
+。`-Resolve` 也会把完整地址放在 `fallback_url=` 里，方便你提前判断。
+
+约定：
+
+1. **先 Resolve、后 Install** —— 能按名字调就不要下载；`-Install` 只是宿主未预置时的兵底。
+2. `-Install` 是本技能里**唯一联网**的 preset 相关命令（`-Capacity` 会调硬件探测）；
+   `-Menu` / `-Route` / `-Resolve` / `-Questions` 仍然全程离线。
+3. 下载过程会打印以 `技能包下载中` 开头的进度行，**同样要实时展示给用户**。
+4. 已安装时返回 `installed=already` 并跳过下载；需要重装加 `-Force`。
+5. 失败时返回 `status=error` 并给出 `url` 与 `install_dir`，让用户可以手动下载解压 —— **绝不伪造成功**。
+6. 装完后按返回的 `entry=`（解压出来的 `scripts\run.ps1`）调用该 skill；
+   它首次运行依然会下载模型，适用下面的进度条强制要求。
 
 ---
 
@@ -226,10 +257,10 @@ ASR skill 做推理。
 调用本技能时，把这些问题原样推荐给用户（"你可以直接问我下面这些……"）。用户问到其中任意一条，
 就调用对应 skill。
 
-**这 17 个 skill 已经上架**（Intel AI PC Skills release 1.0.9），按 `skill 名` 直接调用即可 ——
-本技能不再托管下载地址、也不负责下载解压。`key` 只是仓库内部的稳定标识（路由、关键词、组合配方
-都用它），对外调用请用 `skill 名`。「首次下载模型」一列标 ✅ 的能力，第一次调用时**必须**给用户
-展示下载进度条。
+**这 17 个 skill 已经上架**（Intel AI PC Skills release 1.0.9），按 `skill 名` 直接调用即可。
+`key` 只是仓库内部的稳定标识（路由、关键词、组合配方都用它），对外调用请用 `skill 名`。
+宿主上找不到某个 skill 时，用 `-Install <key>` 走上文的**备用下载方案**。
+「首次下载模型」一列标 ✅ 的能力，第一次调用时**必须**给用户展示下载进度条。
 
 | # | 预设问题（推荐话术） | skill 名（调用用） | key（内部） | 首次下载模型 |
 |---|---|---|---|---|
@@ -309,9 +340,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts
 | -Menu | 打印推荐给用户的预设问题（默认动作 = 启动 Learning Bot） |
 | -Questions \<type\> | 输出准备好的问题：`preset` / `preflight` / `clarify` / `all`（`[SKILL_QUESTIONS]` 契约，离线） |
 | -Route "\<text\>" | 对一句用户输入给出路由建议（preset / dev / clarify） |
-| -Resolve \<key\> | 把内部 key 解析成上架后的 skill 名（宿主按该名字调用） |
-| -Install \<key\> | \[兼容别名\] 等同 `-Resolve`；skill 已上架，不再需要下载 |
-| -OutDir | \[已废弃\] 早期 `-Install` 的下载目录，现已无作用 |
+| -Resolve \<key\> | 把内部 key 解析成上架后的 skill 名（宿主按该名字调用）；离线 |
+| -Install \<key\> | \[备用方案\] 宿主未预置该 skill 时，从 release 下载并解压技能包（**唯一联网命令**） |
+| -OutDir | `-Install` 的解压目录；默认 `~/.openvino/aipc-skills` |
+| -Force | `-Install` 时即使已存在也重新下载 |
 
 下面用 `$RUN` 代表入口脚本的绝对路径，实际调用时替换掉：
 
@@ -329,6 +361,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File $RUN -Route "帮我把这段
 
 # 把 key 解析成上架后的 skill 名（宿主按该名字调用；不会下载任何东西）
 powershell -NoProfile -ExecutionPolicy Bypass -File $RUN -Resolve asr
+
+# 备用方案：宿主没预置该 skill 时，从 release 下载并解压技能包
+powershell -NoProfile -ExecutionPolicy Bypass -File $RUN -Install asr
 ```
 
 ---
@@ -408,13 +443,34 @@ skill_name=<上架后的官方 skill 名，宿主按它调用>
 name_cn=<中文名>
 model_download=true|false      # 首次调用是否会下载模型
 progress_required=true|false   # true 时必须向用户实时展示下载进度条
+fallback_url=<宿主没预置时可以下载的技能包地址>
 progress_note=<progress_required=true 时给出的具体做法>
+fallback_note=<怎么走备用安装路径>
 note=already published; invoke it by skill_name (no skill-package download needed)
 [/SKILL_RESULT]
 ```
 
-`-Install` 是 `-Resolve` 的兼容别名，输出完全相同 —— skill 已上架，本技能不会下载任何东西。
 key 不存在时返回 `status=error` 并列出可选 key —— **绝不伪造成功**。
+
+### 安装（install、备用方案）
+
+```
+[SKILL_RESULT]
+status=ok|error
+action=install
+skill=<key>
+skill_name=<官方 skill 名>
+installed=downloaded|already
+install_dir=<解压到的本地目录>
+entry=<解压出来的 scripts\run.ps1 绝对路径，后续按它调用>
+url=<技能包下载地址>
+model_download=true|false
+progress_required=true|false
+[/SKILL_RESULT]
+```
+
+下载失败（无网络 / 404）时返回 `status=error`，并把 `url` 和 `install_dir` 一并给出，方便用户
+手动下载 zip 后解压 —— **绝不伪造成功**。
 
 ---
 
@@ -424,6 +480,8 @@ key 不存在时返回 `status=error` 并列出可选 key —— **绝不伪造�
 - 拿到用户具体请求后用 `-Route` 得到建议，再据此决定：`preset` → `-Resolve <key>` 取名字并调用该 skill；
   `dev` → 转交对应开发类 skill；`clarify` → 先追问。
 - 解析每个 `[SKILL_RESULT]` 的 `status`；安装/调用失败不要谎报成功。
+- 按 `skill_name` 调不到、宿主没预置该 skill 时，改走备用方案 `-Install <key>` 下载技能包，
+  再按返回的 `entry=` 调用；不要因为“没装”就放弃或改用云端。
 - `-Resolve` 返回 `progress_required=true` 的 skill，**首次调用必须实时展示模型下载进度条**，
   并在退出码 3 时用 `--continue` 续跑直到完成；不允许静默等待，也不允许改用云端方案。
 - 仅限 Intel AIPC (Windows)、本地离线运行；非 Intel 硬件或云端推理请求要明确拒绝。

@@ -29,7 +29,8 @@ parsed — decide the next step from the block; never assume success.
 The 17 published local aipc-skills (`asr`, `tts`, `realtime-translator`, `ocr-npu`, `mineru`,
 `txt2img`, `img2img`, `txt2video`, `paddleocr-vl` (GPU OCR), `yolo26`, `sr`, `scene-recognition`,
 `screenshot-qa`, `computer-use`, `vram`, `iqiyi`, `game-guide`) are **already published — invoke
-them by the name `learning-bot -Resolve <key>` returns; there is nothing to download.** They are
+them by the name `learning-bot -Resolve <key>` returns; if the host doesn't have one, fall back to
+`learning-bot -Install <key>` (see below).** They are
 **atomic building blocks**, not a lookup table. Decide in this order:
 
 1. Non-Intel hardware mentioned → confirm the platform first.
@@ -54,6 +55,31 @@ missing stage yourself via `openvino-content-fetch` (find the model) →
 `learning-bot`'s `-Route` reports this as `scope=preset|compose|dev|clarify` plus `targets=`
 (the ordered chain), `assist=` (dev skills in a supporting role) and `gaps=` (stages you must build
 yourself). Parse those fields rather than assuming a single target.
+
+### Fallback: install the skill when the host doesn't ship it
+
+If a preset skill turns out **not to be available on the host** (invoking it by `skill_name` fails,
+or the capability simply isn't there), do **not** abandon the request and do **not** switch to a
+cloud API. Run the backup path:
+
+```powershell
+<REPO>\learning-bot\scripts\run.ps1 -Install <key> [-OutDir <dir>] [-Force]
+```
+
+It downloads that skill's package from the AI PC Skills **1.0.9** release
+(https://github.com/makejiang/aipc-skills/releases/tag/1.0.9) and unzips it (default
+`~/.openvino/aipc-skills`), then returns `install_dir` and `entry` — invoke the skill through that
+`entry` (`scripts\run.ps1`) from then on. `-Resolve` already exposes the package URL as
+`fallback_url=`, so you can tell in advance where it would come from.
+
+- Order matters: **Resolve first, Install only as a fallback.** Never download a package the host
+  already provides.
+- The package download prints `技能包下载中` progress lines — relay them just like model downloads.
+- `installed=already` means it was already there; add `-Force` only when you really need a re-install.
+- On failure it returns `status=error` with `url` + `install_dir` so the user can download manually.
+  Report that honestly; never claim success.
+- After installing, the skill's own first run still downloads models — the progress-bar rules below
+  apply.
 
 ### Model downloads MUST show a progress bar (non-negotiable)
 

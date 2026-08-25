@@ -2,15 +2,19 @@
   Learning Bot launcher - orchestrator entry point.
 
   Starts the Learning Bot: recommends the preset questions, routes a user utterance to a
-  preset local skill (15 published aipc-skills) or a dev skill (ENV/FETCH/PIPE), and can
-  resolve a preset key to its published skill name. All logic lives in scripts/learning_bot.py (stdlib only; menu and
-  routing are offline; the 15 local skills are already published and are invoked by name).
+  preset local skill (17 published aipc-skills) or a dev skill (ENV/FETCH/PIPE), and can
+  resolve a preset key to its published skill name. All logic lives in scripts/learning_bot.py
+  (stdlib only; menu / route / resolve are offline).
+
+  -Install is the BACKUP path: when the host does not ship a preset skill, download its package
+  from the AI PC Skills release (1.0.9) and unzip it locally. It is the only networked command here.
 
   Usage:
     run.ps1 -Menu                         # 打印推荐给用户的预设问题
     run.ps1 -Questions preflight          # 输出准备好的问题（preset/preflight/clarify/all）
     run.ps1 -Route "帮我把录音转成文字"    # 对一句用户输入给出路由建议
-    run.ps1 -Resolve asr                  # 把 key 解析成上架后的官方 skill 名
+    run.ps1 -Resolve asr                  # 把 key 解析成上架后的官方 skill 名（离线）
+    run.ps1 -Install asr [-OutDir <dir>] [-Force]   # 备用：宿主没预置时下载并解压技能包
 #>
 [CmdletBinding()]
 param(
@@ -20,6 +24,7 @@ param(
   [string]$Resolve,
   [string]$Install,
   [string]$OutDir,
+  [switch]$Force,
   [switch]$Capacity,
   [string]$CanRun,
   [double]$Params,
@@ -40,7 +45,7 @@ if ($Rest -and $Rest.Count -gt 0) {
   Write-Host "skill=learning-bot"
   Write-Host "reason=unknown-argument"
   Write-Host ("unknown=" + ($Rest -join " "))
-  Write-Host "valid_params=-Menu | -Questions preset|preflight|clarify|all | -Route <text> | -Resolve <key> | -Install <key> (兼容别名) | -Capacity | -CanRun <model> [-Params <n>] [-Precision INT4|INT8|FP16|FP32]"
+  Write-Host "valid_params=-Menu | -Questions preset|preflight|clarify|all | -Route <text> | -Resolve <key> | -Install <key> [-OutDir <dir>] [-Force] | -Capacity | -CanRun <model> [-Params <n>] [-Precision INT4|INT8|FP16|FP32]"
   Write-Host "note=unrecognized argument; nothing was executed"
   Write-Host "[/SKILL_RESULT]"
   exit 1
@@ -96,9 +101,11 @@ if ($Resolve) {
   exit $LASTEXITCODE
 }
 if ($Install) {
-  # -Install 保留为兼容别名：这些 skill 已上架，不再下载，直接解析成官方名。
-  if ($OutDir) { & $py $Bot --install $Install --out-dir $OutDir }
-  else         { & $py $Bot --install $Install }
+  # 备用方案：宿主没预置这个 skill 时，从 release 下载并解压技能包。
+  $inArgs = @($Bot, "--install", $Install)
+  if ($OutDir) { $inArgs += @("--out-dir", $OutDir) }
+  if ($Force)  { $inArgs += "--force" }
+  & $py @inArgs
   exit $LASTEXITCODE
 }
 

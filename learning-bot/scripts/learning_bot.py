@@ -9,7 +9,10 @@ It does three things, all emitting a machine-parsable [SKILL_RESULT] block:
   --route "<text>"      Classify a user utterance -> a preset skill, a dev skill (ENV/FETCH/PIPE),
                         or "clarify". This is a SUGGESTION for the agent, not a hard decision.
   --resolve <key>       Resolve a preset key to its published skill name (the host invokes it by
-                        that name). --install is kept as a backward-compatible alias.
+                        that name). Offline.
+  --install <key>       BACKUP path: when the host does not ship that skill, download the package
+                        from the AI PC Skills release and unzip it locally. Only command here
+                        that hits the network.
 
 The 17 preset skills and the 3 dev skills live in scripts/skills_registry.json.
 
@@ -21,8 +24,11 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import time
+import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -448,7 +454,11 @@ def cmd_resolve(reg, key, out_dir=None):
         ("name_cn", s["name_cn"]),
         ("model_download", "true" if needs_dl else "false"),
         ("progress_required", "true" if needs_dl else "false"),
+        ("fallback_url", _fallback_url(reg, s)),
         ("note", "already published; invoke it by skill_name (no skill-package download needed)"),
+        ("fallback_note",
+         "宿主上找不到该 skill 时，用 `-Install {} [-OutDir <目录>]` 从 release 下载并解压，"
+         "再按解压出来的 scripts\\run.ps1 调用".format(key)),
     ]
     if needs_dl:
         fields.append((
@@ -461,6 +471,180 @@ def cmd_resolve(reg, key, out_dir=None):
         fields.append(("ignored_out_dir", out_dir))
     emit(fields)
     return 0
+
+
+# --------------------------------------------------------------------------
+# 备用方案：宿主没预置某个 AIPC skill 时，从 release 下载技能包
+#
+# 正常路径是 --resolve：skill 已上架，宿主按 skill_name 直接调用即可。但宿主未预置时
+# 那条路会直接断掉，所以这里提供 --install 作为 backup：从 registry 的 release.base_url
+# 拼出 zip 地址，下载 → 校验 → 解压到本地，让 agent 还能按解压出来的 run.ps1 继续干活。
+#
+# 这是本文件里**唯一**会联网的 preset 相关命令（--capacity 会 shell out 探测硬件）。
+# --menu / --route / --resolve / --questions 仍然全程离线。
+# --------------------------------------------------------------------------
+
+DEFAULT_INSTALL_ROOT = Path(os.path.expanduser("~")) / ".openvino" / "aipc-skills"
+
+
+def _fallback_url(reg, skill):
+    base = (reg.get("release") or {}).get("base_url", "")
+    zip_name = skill.get("zip", "")
+    return base + zip_name if base and zip_name else ""
+
+
+def _download(url, dest, label):
+    """Stream a zip to dest, printing 「技能包下载中」progress lines the agent must relay."""
+    import urllib.request
+
+    tmp = dest.with_suffix(dest.suffix + ".partial")
+    tmp.parent.mkdir(parents=True, exist_ok=True)
+    req = urllib.request.Request(url, headers={"User-Agent": "learning-bot/1.0"})
+    start = time.time()
+    with urllib.request.urlopen(req, timeout=60) as resp, open(tmp, "wb") as f:
+        total = int(resp.headers.get("Content-Length") or 0)
+        done = 0
+        last = 0.0
+        while True:
+            chunk = resp.read(256 * 1024)
+            if not chunk:
+                break
+            f.write(chunk)
+            done += len(chunk)
+            now = time.time()
+            if now - last >= 0.5 or (total and done >= total):
+                last = now
+                _print_progress(done, total, now - start, label)
+    tmp.replace(dest)
+    _print_progress(dest.stat().st_size, dest.stat().st_size, time.time() - start, label)
+    return dest
+
+
+def _human(n):
+    for unit in ("B", "KB", "MB", "GB"):
+        if n < 1024 or unit == "GB":
+            return "{:.1f} {}".format(n, unit)
+        n /= 1024.0
+
+
+def _print_progress(done, total, elapsed, label):
+    speed = done / elapsed if elapsed > 0 else 0
+    if total:
+        pct = done * 100.0 / total
+        filled = int(pct / 5)
+        bar = "█" * filled + "░" * (20 - filled)
+        eta = (total - done) / speed if speed > 0 else 0
+        line = "技能包下载中 [{}] {:5.1f}% | {}/{} | {}/s | 剩余约 {} | {}".format(
+            bar, pct, _human(done), _human(total), _human(speed), _fmt_eta(eta), label)
+    else:
+        line = "技能包下载中 [{}] {} | {}/s | {}".format(
+            "░" * 20, _human(done), _human(speed), label)
+    print(line, flush=True)
+
+
+def _fmt_eta(sec):
+    sec = int(sec)
+    if sec < 60:
+        return "{}秒".format(sec)
+    return "{}分{}秒".format(sec // 60, sec % 60)
+
+
+def cmd_install(reg, key, out_dir=None, force=False):
+    """备用方案：把某个已上架的 AIPC skill 从 release 下载并解压到本地。"""
+    presets = {s["key"]: s for s in reg["preset_skills"]}
+    if key not in presets:
+        emit([
+            ("status", "error"),
+            ("action", "install"),
+            ("skill", key),
+            ("reason", f"未知的 preset skill key：{key}；可选：{', '.join(presets)}"),
+        ])
+        return 1
+
+    s = presets[key]
+    url = _fallback_url(reg, s)
+    if not url:
+        emit([
+            ("status", "error"),
+            ("action", "install"),
+            ("skill", key),
+            ("reason", "registry 里没有该 skill 的 release zip，无法走备用下载方案"),
+        ])
+        return 1
+
+    root = Path(out_dir) if out_dir else DEFAULT_INSTALL_ROOT
+    target = root / Path(s["zip"]).stem
+    entry = target / "scripts" / "run.ps1"
+
+    if entry.exists() and not force:
+        emit([
+            ("status", "ok"),
+            ("action", "install"),
+            ("skill", key),
+            ("skill_name", s["skill_name"]),
+            ("installed", "already"),
+            ("install_dir", str(target)),
+            ("entry", str(entry)),
+            ("url", url),
+            ("note", "已存在，跳过下载；加 -Force 可强制重新下载"),
+        ])
+        return 0
+
+    zip_path = root / s["zip"]
+    try:
+        print(f"从 release 备用地址下载技能包：{url}", flush=True)
+        _download(url, zip_path, s["skill_name"])
+        if target.exists() and force:
+            shutil.rmtree(target)
+        target.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(zip_path) as zf:
+            _safe_extract(zf, target)
+        zip_path.unlink(missing_ok=True)
+    except Exception as exc:                      # noqa: BLE001 - 原因要如实回报给 agent
+        emit([
+            ("status", "error"),
+            ("action", "install"),
+            ("skill", key),
+            ("url", url),
+            ("install_dir", str(target)),
+            ("reason", "{}: {}".format(type(exc).__name__, exc)),
+            ("note", "下载/解压失败；可让用户手动下载上面的 url 并解压到 install_dir —— 绝不伪造成功"),
+        ])
+        return 1
+
+    entry = _find_entry(target)
+    emit([
+        ("status", "ok"),
+        ("action", "install"),
+        ("skill", key),
+        ("skill_name", s["skill_name"]),
+        ("installed", "downloaded"),
+        ("install_dir", str(target)),
+        ("entry", str(entry) if entry else ""),
+        ("url", url),
+        ("model_download", "true" if s.get("has_model_download") else "false"),
+        ("progress_required", "true" if s.get("has_model_download") else "false"),
+        ("note", "备用方案安装完成；按 entry 指向的 run.ps1 调用该 skill"),
+    ])
+    return 0
+
+
+def _safe_extract(zf, target):
+    """Reject absolute paths and .. traversal before extracting (zip-slip guard)."""
+    root = target.resolve()
+    for member in zf.namelist():
+        dest = (root / member).resolve()
+        if not str(dest).startswith(str(root)):
+            raise ValueError(f"zip entry escapes the target directory: {member}")
+    zf.extractall(root)
+
+
+def _find_entry(target):
+    direct = target / "scripts" / "run.ps1"
+    if direct.exists():
+        return direct
+    hits = sorted(target.glob("*/scripts/run.ps1"))
+    return hits[0] if hits else None
 
 
 # --------------------------------------------------------------------------
@@ -629,7 +813,7 @@ def main():
     g.add_argument("--resolve", metavar="KEY",
                    help="把 preset key 解析成上架后的官方 skill 名（宿主按该名字调用）")
     g.add_argument("--install", metavar="KEY",
-                   help="[兼容别名] 等同 --resolve；这些 skill 已上架，不再需要下载")
+                   help="[备用方案] 宿主未预置该 skill 时，从 AI PC Skills release 下载并解压技能包")
     g.add_argument("--questions", metavar="TYPE",
                    choices=["preset", "preflight", "clarify", "all"],
                    help="输出准备好的问题（preset/preflight/clarify/all），[SKILL_QUESTIONS] 契约")
@@ -638,7 +822,9 @@ def main():
     g.add_argument("--can-run", metavar="MODEL", dest="can_run",
                    help="判定某模型在本机跑不跑得动（默认按 INT4 估算）")
     ap.add_argument("--out-dir", default=None,
-                    help="[已废弃] 早期 --install 的下载目录；skill 已上架，此参数不再有作用")
+                    help="--install 的解压目录；默认 ~/.openvino/aipc-skills")
+    ap.add_argument("--force", action="store_true",
+                    help="--install 时即使已存在也重新下载")
     ap.add_argument("--params", type=float, default=None,
                     help="--can-run 的参数量（单位 B）；不给则从 model id 解析")
     ap.add_argument("--precision", default=None, choices=["INT4", "INT8", "FP16", "FP32"],
@@ -662,7 +848,7 @@ def main():
     if args.resolve is not None:
         return cmd_resolve(reg, args.resolve, args.out_dir)
     if args.install is not None:
-        return cmd_resolve(reg, args.install, args.out_dir)
+        return cmd_install(reg, args.install, args.out_dir, args.force)
     return 0
 
 

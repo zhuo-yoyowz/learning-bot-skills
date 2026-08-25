@@ -42,9 +42,12 @@ Write-Host "2. Registry is well-formed (17 preset skills + 3 dev skills)" -Foreg
 $reg = $null
 try { $reg = Get-Content -Raw -Encoding UTF8 $Registry | ConvertFrom-Json } catch { $reg = $null }
 Check "registry parses as JSON"        { $null -ne $reg }
-Check "no download URLs in the registry" {
-  # skill 已上架，按 skill_name 调用；registry 里不应再残留 release/base_url/zip。
-  (-not $reg.release) -and ((($reg.preset_skills | Where-Object { $_.zip }) | Measure-Object).Count -eq 0)
+Check "release block points at 1.0.9" {
+  ($reg.release.tag -eq "1.0.9") -and ($reg.release.base_url -like "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/*")
+}
+Check "every preset carries a fallback zip" {
+  $bad = $reg.preset_skills | Where-Object { -not $_.zip -or ($_.zip -notlike "*.zip") }
+  ($bad | Measure-Object).Count -eq 0
 }
 Check "17 preset skills"               { $reg.preset_skills.Count -eq 17 }
 Check "3 dev skills (ENV/FETCH/PIPE)"  { $reg.dev_skills.Count -eq 3 }
@@ -89,6 +92,11 @@ Check "resolve vram -> progress_required=false" { $rVram -match "progress_requir
 Check "resolve vram -> no progress_note"        { $rVram -notmatch "progress_note=" }
 $rSr = & $Py $Bot --resolve sr 2>&1 | Out-String
 Check "resolve sr -> skill_name=local-sr"       { $rSr -match "skill_name=local-sr" }
+Check "resolve sr -> fallback_url on the 1.0.9 release" {
+  $rSr -match "fallback_url=https://github\.com/makejiang/aipc-skills/releases/download/1\.0\.9/skill-local-sr-[^\r\n]*\.zip"
+}
+$rBad = & $Py $Bot --install not-a-skill 2>&1 | Out-String
+Check "install unknown key -> status=error"     { $rBad -match "status=error" -and $rBad -match "action=install" }
 
 Write-Host ""
 Write-Host "4. Routing: preset inputs map to the expected preset skill" -ForegroundColor White
