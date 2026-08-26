@@ -1,4 +1,4 @@
-﻿<#
+<#
   Sandbox driver for d:\learning-bot-skills\learning-bot-preset-test-cases.md.
   Runs every prescribed prompt against `learning_bot.py --route` and the existing
   `test_learning_bot.ps1`-style route checks, then reports pass/fail.

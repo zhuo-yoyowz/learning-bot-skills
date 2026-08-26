@@ -50,7 +50,7 @@ skill（ENV / FETCH / PIPE），（c）无法归类时先追问，（d）遵守 
 ## 1b. 模型下载进度条（强制要求）
 
 17 个能力里除 `vram` / `iqiyi` 外都会在**首次调用**时下载模型。`-Resolve <key>` 会返回
-`model_download=` / `progress_required=`；`progress_required=true` 时必须实时展示进度条。
+`model_download=` / `progress_required=`；`progress_required=true` 时必须首次展示进度条，然后每5分钟展示一次。
 
 | ID | 场景 | 预期行为 | 通过标准 |
 |---|---|---|---|

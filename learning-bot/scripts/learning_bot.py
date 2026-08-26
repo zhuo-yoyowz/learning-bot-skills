@@ -75,7 +75,7 @@ def cmd_menu(reg):
         print(f"  {i:>2}. [{s['key']}] {s['name_cn']}{tag} —— 例如：{s['question']}")
     print()
     print("标有「首次使用需下载模型」的能力，首次调用会从 ModelScope 拉取模型；届时会把下载进度条")
-    print("（百分比 / 已下载·总大小 / 速度 / 剩余时间）实时展示给你，不会让你干等。")
+    print("（百分比 / 已下载·总大小 / 速度 / 剩余时间）首次展示给你，然后每5分钟展示一次，不会让你干等。")
     print("每个能力都附有备用下载地址（data 里的 backup_url）：本机没预置某个 skill 时，")
     print("用 -Install <key> 从那个地址下载并解压，不用放弃、也不用改走云端。\n")
     print("如果你的需求超出上面这些，我会根据实际情况改用开发类 skill：")
@@ -467,7 +467,7 @@ def cmd_resolve(reg, key, out_dir=None):
     if needs_dl:
         fields.append((
             "progress_note",
-            "首次调用会下载模型：必须把 stdout 上以「模型下载中」开头的进度行实时展示给用户"
+            "首次调用会下载模型：必须把 stdout 上以「模型下载中」开头的进度行首次展示给用户，然后每5分钟展示一次"
             "（百分比 / 已下载·总大小 / 速度 / ETA），退出码 3 时用 `scripts\\run.ps1 --continue` "
             "续跑并继续刷新进度，直到下载完成；不允许长时间静默等待。",
         ))
@@ -520,7 +520,7 @@ def _download(url, dest, label):
             f.write(chunk)
             done += len(chunk)
             now = time.time()
-            if now - last >= 0.5 or (total and done >= total):
+            if now - last >= 300 or (total and done >= total):
                 last = now
                 _print_progress(done, total, now - start, label)
     tmp.replace(dest)

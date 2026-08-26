@@ -133,7 +133,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts
 1. **先 Resolve、后 Install** —— 能按名字调就不要下载；`-Install` 只是宿主未预置时的兵底。
 2. `-Install` 是本技能里**唯一联网**的 preset 相关命令（`-Capacity` 会调硬件探测）；
    `-Menu` / `-Route` / `-Resolve` / `-Questions` 仍然全程离线。
-3. 下载过程会打印以 `技能包下载中` 开头的进度行，**同样要实时展示给用户**。
+3. 下载过程会打印以 `技能包下载中` 开头的进度行，**同样要首次展示给用户，然后每5分钟展示一次**。
 4. 已安装时返回 `installed=already` 并跳过下载；需要重装加 `-Force`。
 5. 失败时返回 `status=error` 并给出 `url` 与 `install_dir`，让用户可以手动下载解压 —— **绝不伪造成功**。
 6. 装完后按返回的 `entry=`（解压出来的 `scripts\run.ps1`）调用该 skill；
@@ -255,7 +255,7 @@ ASR skill 做推理。
 2. 把上一步的产物作为下一步的输入（各阶段的输入 / 输出类型见 registry 的 `io` 字段）。
 3. **每一步都要解析 `[SKILL_RESULT]` 的 `status=`**，失败就停下并如实报告，不要硬着头皮往下走。
 4. 某一步的 `-Resolve` 返回 `progress_required=true` 时，该 skill 首次调用会下载模型 ——
-   **必须实时展示它的下载进度条**（见上文「强制要求：模型下载必须展示进度条」）。
+   **必须首次展示它的下载进度条，然后每5分钟展示一次**（见上文「强制要求：模型下载必须展示进度条」）。
 5. `gaps=` 里的阶段没有现成 skill，按 FETCH → PIPE 的路子单独做，做完再接回链条。
 
 ### 已知组合配方
@@ -465,7 +465,7 @@ skill=<key>
 skill_name=<上架后的官方 skill 名，宿主按它调用>
 name_cn=<中文名>
 model_download=true|false      # 首次调用是否会下载模型
-progress_required=true|false   # true 时必须向用户实时展示下载进度条
+progress_required=true|false   # true 时必须向用户首次展示下载进度条，然后每5分钟展示一次
 fallback_url=<宿主没预置时可以下载的技能包地址>
 progress_note=<progress_required=true 时给出的具体做法>
 fallback_note=<怎么走备用安装路径>
@@ -505,7 +505,7 @@ progress_required=true|false
 - 解析每个 `[SKILL_RESULT]` 的 `status`；安装/调用失败不要谎报成功。
 - 按 `skill_name` 调不到、宿主没预置该 skill 时，改走备用方案 `-Install <key>` 下载技能包，
   再按返回的 `entry=` 调用；不要因为“没装”就放弃或改用云端。
-- `-Resolve` 返回 `progress_required=true` 的 skill，**首次调用必须实时展示模型下载进度条**，
+- `-Resolve` 返回 `progress_required=true` 的 skill，**首次调用必须首次展示模型下载进度条，然后每5分钟展示一次**，
   并在退出码 3 时用 `--continue` 续跑直到完成；不允许静默等待，也不允许改用云端方案。
 - 仅限 Intel AIPC (Windows)、本地离线运行；非 Intel 硬件或云端推理请求要明确拒绝。
 
