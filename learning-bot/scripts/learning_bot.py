@@ -490,6 +490,12 @@ def cmd_resolve(reg, key, out_dir=None):
 
 DEFAULT_INSTALL_ROOT = Path(os.path.expanduser("~")) / ".openvino" / "aipc-skills"
 
+# How often a user-visible 「技能包下载中」 line may be printed. The first line is
+# emitted as soon as the download starts, then at most one per interval, so a
+# large package reports in every 5 minutes instead of streaming hundreds of
+# lines. Mirrors PROGRESS_DISPLAY_INTERVAL in the AI PC skills' model_download.py.
+PROGRESS_DISPLAY_INTERVAL = 300.0
+
 
 def _fallback_url(reg, skill):
     """Per-skill backup_url wins; base_url + zip is only a safety net for older registries."""
@@ -512,6 +518,8 @@ def _download(url, dest, label):
     with urllib.request.urlopen(req, timeout=60) as resp, open(tmp, "wb") as f:
         total = int(resp.headers.get("Content-Length") or 0)
         done = 0
+        # 0.0 so the very first chunk always prints: the user sees the download
+        # start immediately, then one line per PROGRESS_DISPLAY_INTERVAL.
         last = 0.0
         while True:
             chunk = resp.read(256 * 1024)
@@ -520,7 +528,7 @@ def _download(url, dest, label):
             f.write(chunk)
             done += len(chunk)
             now = time.time()
-            if now - last >= 300 or (total and done >= total):
+            if now - last >= PROGRESS_DISPLAY_INTERVAL or (total and done >= total):
                 last = now
                 _print_progress(done, total, now - start, label)
     tmp.replace(dest)

@@ -18,5 +18,5 @@
   "preset_skills_count": 17,
   "_preset_doc": "17 个本地能力 skill 已上架（Intel AI PC Skills release 1.0.9），按 skill_name 调用即可；清单见 scripts/skills_registry.json。",
   "_fallback_doc": "备用方案：宿主未预置某个 skill 时，-Install <key> [-OutDir <dir>] [-Force] 会从 release 下载技能包并解压（默认 ~/.openvino/aipc-skills），返回 install_dir 与 entry（解压出来的 scripts/run.ps1）。这是本 skill 里唯一联网的 preset 相关命令。",
-  "_progress_doc": "registry 里 has_model_download=true 的 skill 首次调用会下载模型；-Resolve 会返回 model_download / progress_required 字段。progress_required=true 时，宿主 agent 必须把该 skill stdout 上以「模型下载中」开头的进度行实时渲染成进度条展示给用户，并在退出码 3 时用 --continue 续跑直至完成。-Install 下载技能包时同样会打印「技能包下载中」进度行。"
+  "_progress_doc": "registry 里 has_model_download=true 的 skill 首次调用会下载模型；-Resolve 会返回 model_download / progress_required 字段。progress_required=true 时，宿主 agent 必须把该 skill stdout 上以「模型下载中」开头的进度行首次渲染成进度条展示给用户，之后每 5 分钟刷新一次，并在退出码 3 时用 --continue 续跑直至完成。-Install 下载技能包时同样会打印「技能包下载中」进度行。"
 }

@@ -149,7 +149,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts
 | 字段 | 含义 |
 |---|---|
 | `model_download=true` | 该 skill 首次调用会从 ModelScope 拉模型 |
-| `progress_required=true` | **必须**把下载进度展示给用户 |
+| `progress_required=true` | **必须**把下载进度展示给用户：首次展示一次，之后每 5 分钟展示一次 |
 
 被调用的 skill 会在 stdout 上持续打印以 `模型下载中` 开头的进度行，例如：
 
@@ -159,7 +159,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts
 
 硬性约定（不可省略）：
 
-1. **每出现一行新进度就立即转达给用户**，包含百分比、已下载/总大小、速度、剩余时间、当前模型。
+1. **首次出现进度就立即转达给用户，之后每 5 分钟转达一次**（不要每出现一行就转达，否则几 GB 的下载会把对话刷满），包含百分比、已下载/总大小、速度、剩余时间、当前模型。
    宿主 UI 支持进度条控件时直接渲染成进度条，不支持则原样输出这一行。
 2. **退出码 3 = 下载未完成**，不是失败。按提示重新调用 `scripts\run.ps1 --continue`，
    循环直到出现正常结果（大模型可能需要 4–8 次续跑）。

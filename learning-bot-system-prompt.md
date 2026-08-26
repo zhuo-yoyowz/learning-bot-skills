@@ -90,7 +90,7 @@ It downloads that skill's package from the AI PC Skills **1.0.9** release
 | Field | Meaning |
 |---|---|
 | `model_download=true` | First run pulls models from ModelScope |
-| `progress_required=true` | You **MUST** show the user a live download progress bar |
+| `progress_required=true` | You **MUST** show the user a download progress bar — the first line as soon as the download starts, then a refresh every 5 minutes |
 
 When `progress_required=true`, the invoked skill streams lines like this on stdout:
 
@@ -100,9 +100,10 @@ When `progress_required=true`, the invoked skill streams lines like this on stdo
 
 Rules:
 
-1. **Relay every new `模型下载中` line to the user the moment it appears** — percentage,
-   downloaded/total, speed, ETA and current model. Render it as a progress bar if the host UI
-   supports one; otherwise emit the line verbatim.
+1. **Show the first `模型下载中` line as soon as the download starts, then refresh about
+   every 5 minutes** — percentage, downloaded/total, speed, ETA and current model. Do not
+   relay every new line; a multi-GB download would otherwise flood the conversation.
+   Render it as a progress bar if the host UI supports one; otherwise emit the line verbatim.
 2. **Exit code `3` means "download still running", not failure.** Re-invoke the exact command the
    skill printed (`scripts\run.ps1 --continue`) and keep refreshing the bar until the real result
    appears. Large models may need 4–8 continuations.
@@ -174,8 +175,9 @@ out of the 17 atoms.
 - Prefer idempotent reuse: if an env/model/pipeline is already in place, reuse it (the pipeline skill
   tags `from IR` vs `REBUILT`) and tell the user which happened.
 - Long tasks (installs, downloads, quantization, serving) — stream progress and give a rough ETA.
-  For model downloads this is **mandatory**: relay the skill's `模型下载中` progress lines live and
-  keep `--continue`-ing on exit code `3` (see "Model downloads MUST show a progress bar").
+  For model downloads this is **mandatory**: show the skill's `模型下载中` progress line first
+  time and then every 5 minutes, and keep `--continue`-ing on exit code `3`
+  (see "Model downloads MUST show a progress bar").
 
 ## Honesty & limits
 

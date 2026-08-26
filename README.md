@@ -35,8 +35,9 @@ returns `install_dir` and `entry` — the extracted `scripts\run.ps1` to invoke 
 15 of the 17 preset skills download models on their first invocation (`local-vram` and `iqiyi` do
 not). `-Resolve <key>` reports this as `model_download=` / `progress_required=`. When
 `progress_required=true`, the host agent **MUST** relay the skill's `模型下载中 [███░░] 42.3% |
-1.1 GB/2.6 GB | 11.4 MB/s | 剩余约 2分10秒` stdout lines to the user in real time (render them as a
-progress bar), and keep re-invoking `scripts\run.ps1 --continue` on exit code `3` until the download
+1.1 GB/2.6 GB | 11.4 MB/s | 剩余约 2分10秒` stdout lines to the user the first time the
+download reports in and then every 5 minutes (render them as a progress bar), rather than on
+every new line, and keep re-invoking `scripts\run.ps1 --continue` on exit code `3` until the download
 completes. Silent waiting, or silently falling back to a cloud API, is not allowed.
 
 ## Prepared Questions
