@@ -7,7 +7,7 @@
   (stdlib only; menu / route / resolve are offline).
 
   -Install is the BACKUP path: when the host does not ship a preset skill, download its package
-  from the AI PC Skills release (1.0.9) and unzip it locally. It is the only networked command here.
+  from the AI PC Skills release (1.0.9.1) and unzip it locally. It is the only networked command here.
 
   Usage:
     run.ps1 -Menu                         # 打印推荐给用户的预设问题

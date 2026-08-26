@@ -94,7 +94,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts
 这个 skill（按名字调不到 / 找不到该能力），不要就此放弃、也不要改走云端 —— 改用备用方案：
 
 ```powershell
-# 从 AI PC Skills release 1.0.9 下载并解压技能包（默认装到 ~/.openvino/aipc-skills）
+# 从 AI PC Skills release 1.0.9.1 下载并解压技能包（默认装到 ~/.openvino/aipc-skills）
 powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts\run.ps1" -Install asr
 
 # 指定目录 / 强制重装
@@ -103,27 +103,27 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<REPO>\learning-bot\scripts
 
 每个 skill 的完整备用下载地址写死在 registry 的 `backup_url` 字段里（不需要自己拼），
 `-Resolve <key>` 会把它放在 `fallback_url=` 里、`-Menu` 的 `data` 里每一条也带 `backup_url`。
-发布页：https://github.com/makejiang/aipc-skills/releases/tag/1.0.9
+发布页：https://github.com/makejiang/aipc-skills/releases/tag/1.0.9.1
 
-| key | 备用下载地址（Release 1.0.9） |
+| key | 备用下载地址（Release 1.0.9.1） |
 |---|---|
-| `asr` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-asr-1.0.5-20260824-104334.zip |
-| `tts` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-tts-1.0.7-20260824-104436.zip |
-| `txt2img` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-txt2img-1.0.5-20260824-104437.zip |
-| `computer-use` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-computer-use-1.0.5-20260824-104336.zip |
-| `ocr-npu` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-ocr-npu-1.0.5-20260824-104346.zip |
-| `mineru` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-mineru-1.0.5-20260824-104344.zip |
-| `screenshot-qa` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-screenshot-qa-1.0.5-20260824-104434.zip |
-| `vram` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-vram-1.0.5-20260824-104442.zip |
-| `img2img` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-img2img-1.0.5-20260824-104339.zip |
-| `realtime-translator` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-realtime-translator-1.0.5-20260824-104358.zip |
-| `txt2video` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-txt2video-1.0.7-20260824-104442.zip |
-| `paddleocr-vl` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-ocr-gpu-1.0.5-20260824-104345.zip |
-| `yolo26` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-yolo26-1.0.5-20260824-104443.zip |
-| `sr` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-sr-1.0.6-20260824-104435.zip |
-| `scene-recognition` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-local-scene-recognition-1.0.7-20260824-104433.zip |
-| `iqiyi` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-iqiyi-1.0.1-20260824-104333.zip |
-| `game-guide` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9/skill-game-assistant-walkthrough-1.0.1-20260824-104332.zip |
+| `asr` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-asr-1.0.5-20260826-171444.zip |
+| `tts` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-tts-1.0.7-20260826-171527.zip |
+| `txt2img` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-txt2img-1.0.5-20260826-171529.zip |
+| `computer-use` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-computer-use-1.0.5-20260826-171446.zip |
+| `ocr-npu` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-ocr-npu-1.0.5-20260826-171457.zip |
+| `mineru` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-mineru-1.0.5-20260826-171455.zip |
+| `screenshot-qa` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-screenshot-qa-1.0.5-20260826-171525.zip |
+| `vram` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-vram-1.0.5-20260826-171535.zip |
+| `img2img` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-img2img-1.0.5-20260826-171449.zip |
+| `realtime-translator` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-realtime-translator-1.0.5-20260826-171504.zip |
+| `txt2video` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-txt2video-1.0.7-20260826-171535.zip |
+| `paddleocr-vl` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-ocr-gpu-1.0.5-20260826-171456.zip |
+| `yolo26` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-yolo26-1.0.5-20260826-171536.zip |
+| `sr` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-sr-1.0.6-20260826-171526.zip |
+| `scene-recognition` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-local-scene-recognition-1.0.7-20260826-171524.zip |
+| `iqiyi` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-iqiyi-1.0.1-20260826-171443.zip |
+| `game-guide` | https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/skill-game-assistant-walkthrough-1.0.1-20260826-171442.zip |
 
 > 这张表是给人看的副本，**真正的单一来源是 registry 的 `backup_url` 字段** ——
 > 代码只读 registry，不要把地址硬编码进调用逻辑。
@@ -280,7 +280,7 @@ ASR skill 做推理。
 调用本技能时，把这些问题原样推荐给用户（"你可以直接问我下面这些……"）。用户问到其中任意一条，
 就调用对应 skill。
 
-**这 17 个 skill 已经上架**（Intel AI PC Skills release 1.0.9），按 `skill 名` 直接调用即可。
+**这 17 个 skill 已经上架**（Intel AI PC Skills release 1.0.9.1），按 `skill 名` 直接调用即可。
 `key` 只是仓库内部的稳定标识（路由、关键词、组合配方都用它），对外调用请用 `skill 名`。
 宿主上找不到某个 skill 时，用 `-Install <key>` 走上文的**备用下载方案**。
 「首次下载模型」一列标 ✅ 的能力，第一次调用时**必须**给用户展示下载进度条。
@@ -318,7 +318,7 @@ ASR skill 做推理。
   用本技能的 `-Capacity`（见上文「本机资源与模型可行性」）。
 - **`iqiyi` 是唯一一个走网络内容接口的能力**（爱奇艺搜索 / 推荐 / 播控），不做本地推理、
   也没有模型下载。
-- **原清单里的 `Desktop Pet` 已不在 1.0.9 上架列表中**，不要再推荐它。
+- **原清单里的 `Desktop Pet` 已不在 1.0.9.1 上架列表中**，不要再推荐它。
 
 用 `-Resolve <key>` 可以把内部 key 解析成上面的 skill 名：
 

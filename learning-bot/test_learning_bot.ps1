@@ -42,8 +42,8 @@ Write-Host "2. Registry is well-formed (17 preset skills + 3 dev skills)" -Foreg
 $reg = $null
 try { $reg = Get-Content -Raw -Encoding UTF8 $Registry | ConvertFrom-Json } catch { $reg = $null }
 Check "registry parses as JSON"        { $null -ne $reg }
-Check "release block points at 1.0.9" {
-  ($reg.release.tag -eq "1.0.9") -and ($reg.release.base_url -like "https://github.com/makejiang/aipc-skills/releases/download/1.0.9/*")
+Check "release block points at 1.0.9.1" {
+  ($reg.release.tag -eq "1.0.9.1") -and ($reg.release.base_url -like "https://github.com/makejiang/aipc-skills/releases/download/1.0.9.1/*")
 }
 Check "every preset carries a fallback zip" {
   $bad = $reg.preset_skills | Where-Object { -not $_.zip -or ($_.zip -notlike "*.zip") }
@@ -69,7 +69,7 @@ Check "only vram/iqiyi are download-free" {
   $free = @($reg.preset_skills | Where-Object { -not $_.has_model_download } | ForEach-Object { $_.key } | Sort-Object)
   (($free -join ",") -eq "iqiyi,vram")
 }
-# 与 Intel AI PC Skills 清单（docx / release 1.0.9）逐条对应的 17 个已上架能力
+# 与 Intel AI PC Skills 清单（docx / release 1.0.9.1）逐条对应的 17 个已上架能力
 $expectedKeys = @("asr","tts","txt2img","computer-use","ocr-npu","mineru","screenshot-qa","vram","img2img","realtime-translator","txt2video","paddleocr-vl","yolo26","sr","scene-recognition","iqiyi","game-guide")
 Check "all 17 expected keys present" {
   $have = $reg.preset_skills | ForEach-Object { $_.key }
@@ -88,7 +88,7 @@ Check "menu count=17"           { $menu -match "count=17" }
 Check "menu carries model_download flags" { $menu -match '"model_download": true' }
 # PS 5.1 的 ConvertFrom-Json 对顶层数组不做枚举，这里直接数原文里的字段出现次数更稳。
 Check "menu carries a backup_url per skill" {
-  $hits = [regex]::Matches($menu, '"backup_url": "https://github\.com/makejiang/aipc-skills/releases/download/1\.0\.9/[^"]+\.zip"')
+  $hits = [regex]::Matches($menu, '"backup_url": "https://github\.com/makejiang/aipc-skills/releases/download/1\.0\.9\.1/[^"]+\.zip"')
   $hits.Count -eq 17
 }
 
@@ -103,8 +103,8 @@ Check "resolve vram -> progress_required=false" { $rVram -match "progress_requir
 Check "resolve vram -> no progress_note"        { $rVram -notmatch "progress_note=" }
 $rSr = & $Py $Bot --resolve sr 2>&1 | Out-String
 Check "resolve sr -> skill_name=local-sr"       { $rSr -match "skill_name=local-sr" }
-Check "resolve sr -> fallback_url on the 1.0.9 release" {
-  $rSr -match "fallback_url=https://github\.com/makejiang/aipc-skills/releases/download/1\.0\.9/skill-local-sr-[^\r\n]*\.zip"
+Check "resolve sr -> fallback_url on the 1.0.9.1 release" {
+  $rSr -match "fallback_url=https://github\.com/makejiang/aipc-skills/releases/download/1\.0\.9\.1/skill-local-sr-[^\r\n]*\.zip"
 }
 $rBad = & $Py $Bot --install not-a-skill 2>&1 | Out-String
 Check "install unknown key -> status=error"     { $rBad -match "status=error" -and $rBad -match "action=install" }

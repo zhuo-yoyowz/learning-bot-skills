@@ -16,14 +16,14 @@ runs locally and is offline / China-network capable (`-China`).
 
 The `learning-bot` skill is the **entry point**: it presents preset questions and routes each request
 to a preset local skill or, when out of scope, to one of the three dev skills. The 17 preset skills
-(Intel AI PC Skills release 1.0.9) are **already published** — `learning-bot -Resolve <key>` maps an
+(Intel AI PC Skills release 1.0.9.1) are **already published** — `learning-bot -Resolve <key>` maps an
 internal key to the published skill name and the host invokes it by that name.
 
 ### Fallback when the host does not ship a preset skill
 
 If a preset skill is missing on the host, do not give up and do not fall back to the cloud — use
 `learning-bot -Install <key>`. It downloads that skill's package from the
-[AI PC Skills 1.0.9 release](https://github.com/makejiang/aipc-skills/releases/tag/1.0.9) and unzips
+[AI PC Skills 1.0.9.1 release](https://github.com/makejiang/aipc-skills/releases/tag/1.0.9.1) and unzips
 it (default `~/.openvino/aipc-skills`, override with `-OutDir`, re-download with `-Force`), then
 returns `install_dir` and `entry` — the extracted `scripts\run.ps1` to invoke from then on.
 `-Resolve` also surfaces the package URL as `fallback_url=` so you can decide up front.

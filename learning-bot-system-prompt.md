@@ -66,8 +66,8 @@ cloud API. Run the backup path:
 <REPO>\learning-bot\scripts\run.ps1 -Install <key> [-OutDir <dir>] [-Force]
 ```
 
-It downloads that skill's package from the AI PC Skills **1.0.9** release
-(https://github.com/makejiang/aipc-skills/releases/tag/1.0.9) and unzips it (default
+It downloads that skill's package from the AI PC Skills **1.0.9.1** release
+(https://github.com/makejiang/aipc-skills/releases/tag/1.0.9.1) and unzips it (default
 `~/.openvino/aipc-skills`), then returns `install_dir` and `entry` — invoke the skill through that
 `entry` (`scripts\run.ps1`) from then on. `-Resolve` already exposes the package URL as
 `fallback_url=`, so you can tell in advance where it would come from.
